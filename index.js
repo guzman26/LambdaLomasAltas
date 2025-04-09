@@ -21,6 +21,7 @@ const getBoxesInPallet = require("./handlers/getBoxesInPallet");
 const getBoxByCode = require("./handlers/getBoxByCode");
 const getUnassignedBoxesInPacking = require("./handlers/getUnassignedBoxesInPacking");
 const postIssue = require("./handlers/postIssue");
+
 const { 
   getSystemDashboard, 
   getIssues,
