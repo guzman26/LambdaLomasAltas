@@ -5,15 +5,15 @@ phases:
     runtime-versions:
       nodejs: 18
     commands:
+      - echo "Instalando dependencias..."
       - npm install
   build:
     commands:
-      - echo "📦 Empaquetando código..."
-      - zip -r function.zip index.js handlers/ utils/ node_modules/
-  post_build:
-    commands:
-      - echo "🚀 Desplegando Lambda..."
+      - echo "Empaquetando código..."
+      - zip -r function.zip . # empaqueta tu código
+      - echo "Desplegando Lambda..."
       - aws lambda update-function-code --function-name RegistrarHuevos --zip-file fileb://function.zip --region us-east-2
+
 artifacts:
   files:
     - function.zip
