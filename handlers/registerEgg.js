@@ -13,8 +13,17 @@ const dynamoDB = new AWS.DynamoDB.DocumentClient();
  * @throws {Error} If code format is invalid
  */
 const parseBoxCode = (code) => {
+    if (!code || typeof code !== 'string') {
+        throw new Error(`Código inválido: formato incorrecto`);
+    }
+    
     if (code.length !== 15) {
-        throw new Error(`Invalid code: ${code} (incorrect length)`);
+        throw new Error(`Código inválido: ${code} (longitud incorrecta, debe tener 15 dígitos)`);
+    }
+
+    // Validar que el código contiene solo dígitos
+    if (!/^\d+$/.test(code)) {
+        throw new Error(`Código inválido: ${code} (debe contener solo dígitos)`);
     }
 
     return {
@@ -31,9 +40,18 @@ const parseBoxCode = (code) => {
 };
 
 const parsePalletCode = (code) => {
+    if (!code || typeof code !== 'string') {
+        throw new Error(`Código de pallet inválido: formato incorrecto`);
+    }
+    
     if (code.length !== 12) {
         console.log(code.length)
-        throw new Error(`Invalid code: ${code} (incorrect length)`);
+        throw new Error(`Código de pallet inválido: ${code} (longitud incorrecta, debe tener 12 dígitos)`);
+    }
+
+    // Validar que el código contiene solo dígitos
+    if (!/^\d+$/.test(code)) {
+        throw new Error(`Código de pallet inválido: ${code} (debe contener solo dígitos)`);
     }
 
     return {
@@ -84,7 +102,7 @@ const findMatchingPallet = async (boxData) => {
 /**
  * Registers a new egg box and automatically assigns it to a matching pallet if found.
  */
-const registerEgg = async (code, _unusedPalletCode, palletCode, customInfo) => {
+const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) => {
     let parsedData, newBox;
   
     // Step 1: Parse the box code
@@ -104,7 +122,7 @@ const registerEgg = async (code, _unusedPalletCode, palletCode, customInfo) => {
       fecha_registro: new Date().toISOString(),
       estado: "PACKING",
       ubicacion: "PACKING",
-      ...(customInfo && { description: customInfo })
+      ...(scannedCodes && { scannedCodes: JSON.stringify(scannedCodes) })
     };
   
     // Step 3: Save the box to the DB

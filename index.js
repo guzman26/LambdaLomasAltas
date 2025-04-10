@@ -122,10 +122,18 @@ const getRoutes = {
 const postRoutes = {
   "/procesar-escaneo": createHandler(async (event) => {
     const data = helpers.parseBody(event);
-    const { codigo, ubicacion, tipo, palletCodigo, scannedCodes } = data;
+    let { codigo, ubicacion, tipo, palletCodigo, scannedCodes } = data;
+
+    console.log("Datos recibidos:", JSON.stringify(data, null, 2));
 
     helpers.validateRequired(data, ['codigo', 'ubicacion']);
     helpers.validateLocation(ubicacion, Object.values(CONFIG.LOCATIONS));
+    
+    // Determinar el tipo basado en la longitud del código si no se proporciona
+    if (!tipo) {
+      tipo = codigo.length === 15 ? CONFIG.ITEM_TYPES.BOX : CONFIG.ITEM_TYPES.PALLET;
+      console.log(`Tipo determinado automáticamente: ${tipo}`);
+    }
 
     if (tipo === CONFIG.ITEM_TYPES.PALLET) {
       if (ubicacion === CONFIG.LOCATIONS.PACKING) {
