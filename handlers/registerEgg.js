@@ -82,7 +82,7 @@ const findMatchingPallet = async (boxData) => {
     };
 
     const result = await dynamoDB.query(params).promise();
-
+    console.log(result.Items)
     const match = result.Items.find(p => {
         const { calibre, formato_caja, horario_proceso } = parsePalletCode(p.codigo);
         return (
@@ -92,7 +92,7 @@ const findMatchingPallet = async (boxData) => {
       });
       
     if (!match) throw new Error(`No hay pallet para asignar`);
-    if (match?.cantidadCajas > 60 ){
+    if (match?.cantidadCajas > 59 ){
         throw new Error(`Pallet ${match.codigo} is full`);
     }
 
