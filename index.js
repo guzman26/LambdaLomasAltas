@@ -21,6 +21,8 @@ const getBoxesInPallet = require("./handlers/getBoxesInPallet");
 const getBoxByCode = require("./handlers/getBoxByCode");
 const getUnassignedBoxesInPacking = require("./handlers/getUnassignedBoxesInPacking");
 const postIssue = require("./handlers/postIssue");
+const AWS = require('aws-sdk');
+const codepipeline = new AWS.CodePipeline();
 
 const { 
   getSystemDashboard, 
@@ -231,6 +233,29 @@ const postRoutes = {
 };
 
 exports.handler = async (event) => {
+
+  if (event['CodePipeline.job']) {
+    const jobId = event['CodePipeline.job'].id;
+    try {
+      // Realiza aquí la lógica de despliegue u operación que necesitas
+
+      // ✅ Reporta éxito explícitamente
+      await codepipeline.putJobSuccessResult({ jobId }).promise();
+    } catch (error) {
+      console.error("❌ Error en ejecución Lambda desde CodePipeline:", error);
+      await codepipeline.putJobFailureResult({
+        jobId,
+        failureDetails: {
+          message: JSON.stringify(error.message),
+          type: 'JobFailed',
+          externalExecutionId: context.awsRequestId,
+        },
+      }).promise();
+    }
+
+    return;
+  }
+
   try {
     const method = event.httpMethod || event.requestContext?.http?.method;
     const path = event.rawPath || event.path;
