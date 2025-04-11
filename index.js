@@ -21,6 +21,8 @@ const getBoxesInPallet = require("./handlers/getBoxesInPallet");
 const getBoxByCode = require("./handlers/getBoxByCode");
 const getUnassignedBoxesInPacking = require("./handlers/getUnassignedBoxesInPacking");
 const postIssue = require("./handlers/postIssue");
+const deleteBox = require("./handlers/deleteBox");
+const deletePallet = require("./handlers/deletePallet");
 const AWS = require('aws-sdk');
 const codepipeline = new AWS.CodePipeline();
 
@@ -237,6 +239,20 @@ const postRoutes = {
   
   "/admin/generateCustomReport": createHandler(async (event) => {
     return await generateCustomReportHandler(event);
+  }),
+  
+  "/admin/deleteBox": createHandler(async (event) => {
+    const { codigo } = helpers.parseBody(event);
+    helpers.validateRequired({ codigo }, ['codigo']);
+    const result = await deleteBox(codigo);
+    return createApiResponse(result.success ? 200 : 400, result.message);
+  }),
+  
+  "/admin/deletePallet": createHandler(async (event) => {
+    const { codigo } = helpers.parseBody(event);
+    helpers.validateRequired({ codigo }, ['codigo']);
+    const result = await deletePallet(codigo);
+    return createApiResponse(result.success ? 200 : 400, result.message);
   }),
 };
 
