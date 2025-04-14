@@ -71,14 +71,32 @@ async function updateIssueStatus(issueId, status, resolution = null) {
  */
 exports.handler = async (event) => {
   try {
+    console.log('Received event:', JSON.stringify(event, null, 2));
+    
+    // Get issueId from path parameters or body
+    let issueId;
+    if (event.pathParameters && event.pathParameters.issueId) {
+      // Path parameter from our custom routing
+      issueId = event.pathParameters.issueId;
+    } else if (event.path) {
+      // Extract from path if not in path parameters
+      const pathParts = event.path.split('/');
+      const issueIdIndex = pathParts.findIndex(part => part === 'issues') + 1;
+      if (issueIdIndex > 0 && issueIdIndex < pathParts.length) {
+        issueId = pathParts[issueIdIndex];
+      }
+    }
+    
     // Parse the request body
     const requestBody = typeof event.body === 'string'
       ? JSON.parse(event.body)
-      : event.body;
+      : event.body || {};
 
-    // Extract parameters
-    const { issueId, status, resolution } = requestBody || {};
+    // Extract status and resolution from body
+    const { status, resolution } = requestBody;
 
+    console.log(`Updating issue ${issueId} with status: ${status}`);
+    
     // Validate required fields
     if (!issueId || !status) {
       return createApiResponse(400, 'Faltan campos requeridos: issueId y status son obligatorios');

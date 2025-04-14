@@ -266,14 +266,79 @@ const postRoutes = {
 };
 
 const putRoutes = {
+  // Dynamic route matching for issue status updates
   "/admin/issues/:issueId/status": createHandler(async (event) => {
-    const { issueId } = event.pathParameters || {};
+    // Extract issueId from path
+    let issueId;
+    
+    // First try from path parameters (if our custom routing worked)
+    if (event.pathParameters && event.pathParameters.issueId) {
+      issueId = event.pathParameters.issueId;
+    } 
+    // Otherwise extract it from the path
+    else {
+      const pathParts = event.path.split('/');
+      const issueIdIndex = pathParts.findIndex(part => part === 'issues') + 1;
+      if (issueIdIndex > 0 && issueIdIndex < pathParts.length) {
+        issueId = pathParts[issueIdIndex];
+      }
+    }
+    
+    if (!issueId) {
+      return createApiResponse(400, "Missing issueId in path");
+    }
+    
     const { status, resolution } = helpers.parseBody(event);
-    helpers.validateRequired({ issueId, status }, ['issueId', 'status']);
+    helpers.validateRequired({ status }, ['status']);
+    
+    console.log(`Processing PUT request for issue ${issueId}, status: ${status}`);
     
     const result = await updateIssueStatusHandler(issueId, status, resolution);
     return createApiResponse(200, "Estado de la incidencia actualizado correctamente", result);
   }),
+  
+  // Fallback to handle all PUT requests that include "/admin/issues/" and "/status"
+  // This helps with potential encoding or API Gateway path handling differences
+  "/admin/issues": createHandler(async (event) => {
+    // Check if this is an issue status update request
+    if (event.path.includes('/status')) {
+      // Extract issueId from path segments
+      const pathParts = event.path.split('/');
+      const issueIdIndex = pathParts.findIndex(part => part === 'issues') + 1;
+      
+      if (issueIdIndex > 0 && issueIdIndex < pathParts.length) {
+        const issueId = pathParts[issueIdIndex];
+        const { status, resolution } = helpers.parseBody(event);
+        
+        if (!status) {
+          return createApiResponse(400, "Missing status in request body");
+        }
+        
+        console.log(`Fallback handler: Processing PUT request for issue ${issueId}, status: ${status}`);
+        
+        const result = await updateIssueStatusHandler(issueId, status, resolution);
+        return createApiResponse(200, "Estado de la incidencia actualizado correctamente", result);
+      }
+    }
+    
+    return createApiResponse(404, `Route not found for PUT: ${event.path}`);
+  }),
+};
+
+const optionsRoutes = {
+  // Handle all OPTIONS requests with a CORS-friendly response
+  "*": async () => {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'OPTIONS,GET,POST,PUT,DELETE',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key',
+        'Access-Control-Max-Age': '86400', // 24 hours cache for preflight requests
+      },
+      body: '',
+    };
+  }
 };
 
 exports.handler = async (event) => {
@@ -301,6 +366,13 @@ exports.handler = async (event) => {
   }
 
   try {
+    console.log('Event received:', {
+      method: event.httpMethod || event.requestContext?.http?.method,
+      path: event.rawPath || event.path,
+      queryParams: event.queryStringParameters,
+      pathParams: event.pathParameters,
+    });
+
     const method = event.httpMethod || event.requestContext?.http?.method;
     const path = event.rawPath || event.path;
 
@@ -308,6 +380,12 @@ exports.handler = async (event) => {
       return createApiResponse(400, "Invalid request: missing method or path");
     }
 
+    // Handle OPTIONS method for CORS preflight
+    if (method === "OPTIONS") {
+      return await optionsRoutes["*"]();
+    }
+
+    // Get the appropriate routes object based on HTTP method
     const routes = 
       method === "GET" ? getRoutes : 
       method === "POST" ? postRoutes : 
@@ -315,9 +393,77 @@ exports.handler = async (event) => {
       
     if (!routes) return createApiResponse(405, `Method not supported: ${method}`);
 
-    const handler = routes[path];
-    if (!handler) return createApiResponse(404, `Route not found: ${path}`);
+    // Try exact path match first
+    let handler = routes[path];
+    
+    // Special case for PUT to /admin/issues/:issueId/status which is often problematic
+    if (!handler && method === "PUT" && path.includes('/admin/issues/') && path.includes('/status')) {
+      console.log('Detected issue status update request, using special handler');
+      handler = putRoutes["/admin/issues/:issueId/status"];
+    }
+    
+    // If still no handler, try path parameter matching
+    if (!handler) {
+      console.log(`No direct handler for ${path}, trying path parameter matching`);
+      
+      // For each route path that contains a parameter
+      for (const routePath in routes) {
+        if (routePath.includes(':')) {
+          // Convert route template to regex pattern
+          let pattern = routePath;
+          const paramNames = [];
+          
+          // Extract parameter names and build regex
+          routePath.split('/').forEach(part => {
+            if (part.startsWith(':')) {
+              const paramName = part.substring(1);
+              paramNames.push(paramName);
+              pattern = pattern.replace(part, '([^/]+)');
+            }
+          });
+          
+          // Escape special regex chars in the pattern except the capture groups
+          pattern = pattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, char => 
+            (char === '(' || char === ')') ? char : '\\' + char
+          );
+          
+          const regex = new RegExp(`^${pattern}$`);
+          const match = path.match(regex);
+          
+          if (match) {
+            // Extract parameters from regex match
+            const pathParams = {};
+            paramNames.forEach((name, index) => {
+              pathParams[name] = match[index + 1];
+            });
+            
+            console.log(`Matched path ${path} to route ${routePath} with params:`, pathParams);
+            event.pathParameters = pathParams;
+            handler = routes[routePath];
+            break;
+          }
+        }
+      }
+    }
+    
+    // If still no handler, try prefix matching as a last resort
+    if (!handler) {
+      for (const routePath in routes) {
+        if (!routePath.includes(':') && 
+            ((routePath.endsWith('/') && path.startsWith(routePath)) || 
+             path.startsWith(routePath + '/'))) {
+          console.log(`Matched path ${path} to prefix route ${routePath}`);
+          handler = routes[routePath];
+          break;
+        }
+      }
+    }
+    
+    if (!handler) {
+      return createApiResponse(404, `Route not found: ${path}`);
+    }
 
+    console.log(`Invoking handler for ${method} ${path}`);
     return await handler(event);
   } catch (error) {
     console.error("❌ Unhandled Error:", error);
