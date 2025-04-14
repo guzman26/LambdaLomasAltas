@@ -23,13 +23,13 @@ const getUnassignedBoxesInPacking = require("./handlers/getUnassignedBoxesInPack
 const postIssue = require("./handlers/postIssue");
 const deleteBox = require("./handlers/deleteBox");
 const deletePallet = require("./handlers/deletePallet");
+const updateIssueStatusHandler = require("./handlers/updateIssueStatus");
 const AWS = require('aws-sdk');
 const codepipeline = new AWS.CodePipeline();
 
 const { 
   getSystemDashboard, 
   getIssues,
-  updateIssueStatus, 
   auditAndFixData, 
   backupData 
 } = require("./handlers/admin");
@@ -215,7 +215,7 @@ const postRoutes = {
   "/admin/updateIssueStatus": createHandler(async (event) => {
     const { issueId, status, resolution } = helpers.parseBody(event);
     helpers.validateRequired({ issueId, status }, ['issueId', 'status']);
-    const result = await updateIssueStatus(issueId, status, resolution);
+    const result = await updateIssueStatusHandler(issueId, status, resolution);
     return createApiResponse(200, "Issue status updated successfully", result);
   }),
   
@@ -254,6 +254,26 @@ const postRoutes = {
     const result = await deletePallet(codigo);
     return createApiResponse(result.success ? 200 : 400, result.message);
   }),
+
+  "/admin/issues/:issueId/status": createHandler(async (event) => {
+    const { issueId } = event.pathParameters || {};
+    const { status, resolution } = helpers.parseBody(event);
+    helpers.validateRequired({ issueId, status }, ['issueId', 'status']);
+    
+    const result = await updateIssueStatusHandler(issueId, status, resolution);
+    return createApiResponse(200, "Estado de la incidencia actualizado correctamente", result);
+  }),
+};
+
+const putRoutes = {
+  "/admin/issues/:issueId/status": createHandler(async (event) => {
+    const { issueId } = event.pathParameters || {};
+    const { status, resolution } = helpers.parseBody(event);
+    helpers.validateRequired({ issueId, status }, ['issueId', 'status']);
+    
+    const result = await updateIssueStatusHandler(issueId, status, resolution);
+    return createApiResponse(200, "Estado de la incidencia actualizado correctamente", result);
+  }),
 };
 
 exports.handler = async (event) => {
@@ -288,7 +308,11 @@ exports.handler = async (event) => {
       return createApiResponse(400, "Invalid request: missing method or path");
     }
 
-    const routes = method === "GET" ? getRoutes : method === "POST" ? postRoutes : null;
+    const routes = 
+      method === "GET" ? getRoutes : 
+      method === "POST" ? postRoutes : 
+      method === "PUT" ? putRoutes : null;
+      
     if (!routes) return createApiResponse(405, `Method not supported: ${method}`);
 
     const handler = routes[path];
