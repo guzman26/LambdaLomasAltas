@@ -155,19 +155,37 @@ const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) =>
     }
     else{
       try {
-        // Verificar si el pallet ya existe en lugar de crear uno nuevo
+        // Verificar si el pallet ya existe para evitar duplicación
         const { Item: existingPallet } = await dynamoDB.get({
           TableName: "Pallets",
           Key: { codigo: palletCode }
         }).promise();
         
         if (existingPallet) {
-          // Si el pallet ya existe, simplemente usamos su código
-          const updatedPallet = await addBoxToPallet(palletCode, newBox.codigo);
-          return createApiResponse(200, `✅ Caja asignada al pallet ${updatedPallet.codigo}`, {
-            ...newBox,
-            palletId: updatedPallet.codigo,
-          });
+          // Verificar primero si la caja ya está en el pallet para evitar duplicación
+          if (existingPallet.cajas && existingPallet.cajas.includes(newBox.codigo)) {
+            // Si la caja ya está en el pallet, solo actualizar la referencia en la caja
+            await dynamoDB.update({
+              TableName: "Huevos",
+              Key: { codigo: newBox.codigo },
+              UpdateExpression: 'SET palletId = :palletId',
+              ExpressionAttributeValues: {
+                ':palletId': palletCode,
+              },
+            }).promise();
+            
+            return createApiResponse(200, `✅ Caja ya asignada al pallet ${existingPallet.codigo}`, {
+              ...newBox,
+              palletId: existingPallet.codigo,
+            });
+          } else {
+            // Si la caja no está en el pallet, proceder con la asignación normal
+            const updatedPallet = await addBoxToPallet(palletCode, newBox.codigo);
+            return createApiResponse(200, `✅ Caja asignada al pallet ${updatedPallet.codigo}`, {
+              ...newBox,
+              palletId: updatedPallet.codigo,
+            });
+          }
         } else {
           // Si el pallet no existe, entonces lo creamos
           const assignedPalletResponse = await createPallet(palletCode, "PACKING");
