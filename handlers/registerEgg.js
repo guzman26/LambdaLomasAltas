@@ -155,15 +155,30 @@ const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) =>
     }
     else{
       try {
-        // const assignedPallet = await assignPallet(palletCode);
-        const assignedPalletResponse = await createPallet(palletCode, "PACKING");
-        const parsed = JSON.parse(assignedPalletResponse.body);
-        const assignedPalletCode = parsed?.data?.codigo;
-        const updatedPallet = await addBoxToPallet(assignedPalletCode, newBox.codigo);
-        return createApiResponse(200, `✅ Caja asignada al pallet ${updatedPallet.codigo}`, {
-                ...newBox,
-                palletId: updatedPallet.codigo,
-              });
+        // Verificar si el pallet ya existe en lugar de crear uno nuevo
+        const { Item: existingPallet } = await dynamoDB.get({
+          TableName: "Pallets",
+          Key: { codigo: palletCode }
+        }).promise();
+        
+        if (existingPallet) {
+          // Si el pallet ya existe, simplemente usamos su código
+          const updatedPallet = await addBoxToPallet(palletCode, newBox.codigo);
+          return createApiResponse(200, `✅ Caja asignada al pallet ${updatedPallet.codigo}`, {
+            ...newBox,
+            palletId: updatedPallet.codigo,
+          });
+        } else {
+          // Si el pallet no existe, entonces lo creamos
+          const assignedPalletResponse = await createPallet(palletCode, "PACKING");
+          const parsed = JSON.parse(assignedPalletResponse.body);
+          const assignedPalletCode = parsed?.data?.codigo;
+          const updatedPallet = await addBoxToPallet(assignedPalletCode, newBox.codigo);
+          return createApiResponse(200, `✅ Caja asignada al pallet ${updatedPallet.codigo}`, {
+            ...newBox,
+            palletId: updatedPallet.codigo,
+          });
+        }
       } catch (assignError) {
         console.error("❌ Error assigning pallet:", assignError.message);
         return createApiResponse(400, `❌ Caja registrada pero no pudo ser asignada (asignación fallida): ${assignError.message}`);
