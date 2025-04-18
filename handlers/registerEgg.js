@@ -6,6 +6,23 @@ const createPallet = require("./createPallet");
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
+// Add a simple cache to prevent duplicate processing
+const recentlyProcessedBoxes = new Map();
+const PROCESSING_COOLDOWN = 2000; // 2 seconds between processing the same code
+
+// Helper to clean up old entries from the cache
+const cleanupCache = () => {
+  const now = Date.now();
+  for (const [code, timestamp] of recentlyProcessedBoxes.entries()) {
+    if (now - timestamp > 10000) { // Remove entries older than 10 seconds
+      recentlyProcessedBoxes.delete(code);
+    }
+  }
+};
+
+// Run cleanup every minute
+setInterval(cleanupCache, 60000);
+
 /**
  * Parses a box code into its components
  * @param {string} code - 15-digit box code
@@ -103,6 +120,33 @@ const findMatchingPallet = async (boxData) => {
  * Registers a new egg box and automatically assigns it to a matching pallet if found.
  */
 const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) => {
+    // Check if this box was recently processed
+    const now = Date.now();
+    const lastProcessed = recentlyProcessedBoxes.get(code);
+    
+    if (lastProcessed && (now - lastProcessed) < PROCESSING_COOLDOWN) {
+      console.log(`⚠️ Duplicate request for box ${code} detected - processed ${now - lastProcessed}ms ago`);
+      
+      // Instead of rejecting, let's try to get the current state of the box
+      try {
+        const { Item: existingBox } = await dynamoDB.get({
+          TableName: "Huevos",
+          Key: { codigo: code }
+        }).promise();
+        
+        if (existingBox) {
+          console.log("📦 Box already exists, returning current state:", existingBox);
+          return createApiResponse(200, `✅ Caja ya está registrada en el sistema`, existingBox);
+        }
+      } catch (error) {
+        console.error("Error checking for existing box:", error);
+        // Continue with normal flow if we couldn't check
+      }
+    }
+    
+    // Record this processing attempt
+    recentlyProcessedBoxes.set(code, now);
+    
     let parsedData, newBox;
   
     // Step 1: Parse the box code
