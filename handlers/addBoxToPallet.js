@@ -82,24 +82,35 @@ async function addBoxToPallet(palletId, boxCode) {
         throw new Error(`Date mismatch: pallet=${parsedFromCodigo.dateIsoString}, box=${boxDateStr}`);
   
       // 4. Update the pallet
-      const { Attributes: updatedPallet } = await dynamoDB
-        .update({
+      let updatedPallet;
+      try {
+        const updateResult = await dynamoDB.update({
           TableName: PALLETS_TABLE,
           Key: { codigo: palletId },
-          UpdateExpression: `
-            SET cajas = list_append(if_not_exists(cajas, :empty_list), :newBox),
-                cantidadCajas = cantidadCajas + :increment
-          `,
+          UpdateExpression: "SET cajas = list_append(if_not_exists(cajas, :empty_list), :newBox), cantidadCajas = cantidadCajas + :increment",
+          ConditionExpression: "attribute_not_exists(cajas) OR NOT contains(cajas, :box)",
           ExpressionAttributeValues: {
             ':newBox': [boxCode],
             ':empty_list': [],
             ':increment': 1,
+            ':box': boxCode,
           },
           ReturnValues: 'ALL_NEW',
-        })
-        .promise();
-  
-      console.log(`✅ Box "${boxCode}" added to pallet "${palletId}"`);
+        }).promise();
+        updatedPallet = updateResult.Attributes;
+      } catch (updateError) {
+        // Si la condición falla, significa que la caja ya está en la lista, entonces se recupera el pallet actual.
+        if (updateError.code === 'ConditionalCheckFailedException') {
+          console.log(`Box "${boxCode}" already exists in pallet "${palletId}". Skipping duplicate addition.`);
+          const getResult = await dynamoDB.get({
+            TableName: PALLETS_TABLE,
+            Key: { codigo: palletId },
+          }).promise();
+          updatedPallet = getResult.Item;
+        } else {
+          throw updateError;
+        }
+      }
   
       // 5. Update the box with the palletId
       await dynamoDB
