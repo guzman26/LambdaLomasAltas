@@ -267,7 +267,7 @@ const postRoutes = {
 
 const putRoutes = {
   // Dynamic route matching for issue status updates
-  "/admin/issues/:issueId/status": createHandler(async (event) => {
+  "/admin/issues/{issueId}/status": createHandler(async (event) => {
     // Extract issueId from path
     let issueId;
     
