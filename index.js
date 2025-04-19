@@ -255,7 +255,7 @@ const postRoutes = {
     return createApiResponse(result.success ? 200 : 400, result.message);
   }),
 
-  "/admin/issues/:issueId/status": createHandler(async (event) => {
+  "/admin/issues/{issueId}/status": createHandler(async (event) => {
     const { issueId } = event.pathParameters || {};
     const { status, resolution } = helpers.parseBody(event);
     helpers.validateRequired({ issueId, status }, ['issueId', 'status']);
