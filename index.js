@@ -31,7 +31,9 @@ const {
   getSystemDashboard, 
   getIssues,
   auditAndFixData, 
-  backupData 
+  backupData,
+  updateIssueStatus,
+  deleteIssue
 } = require("./handlers/admin");
 const { generateReportHandler } = require("./handlers/generateReports");
 const { generateExcelReportHandler, generateCustomReportHandler } = require("./handlers/generateExcelReports");
@@ -262,6 +264,30 @@ const postRoutes = {
     
     const result = await updateIssueStatusHandler(issueId, status, resolution);
     return createApiResponse(200, "Estado de la incidencia actualizado correctamente", result);
+  }),
+
+  // New endpoint for updating issue status
+  "/admin/issues/update-status": createHandler(async (event) => {
+    const { issueId, status, resolution } = JSON.parse(event.body || "{}");
+    
+    if (!issueId || !status) {
+      return createApiResponse(400, "Faltan campos requeridos: issueId y status son obligatorios");
+    }
+    
+    const result = await updateIssueStatus(issueId, status, resolution);
+    return createApiResponse(200, "Estado de la incidencia actualizado correctamente", result);
+  }),
+  
+  // New endpoint for deleting issues
+  "/admin/issues/delete": createHandler(async (event) => {
+    const { issueId } = JSON.parse(event.body || "{}");
+    
+    if (!issueId) {
+      return createApiResponse(400, "Falta el campo requerido: issueId es obligatorio");
+    }
+    
+    const result = await deleteIssue(issueId);
+    return createApiResponse(200, "Incidencia eliminada correctamente", result);
   }),
 };
 
