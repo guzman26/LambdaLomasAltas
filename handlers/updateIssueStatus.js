@@ -14,21 +14,17 @@ const ADMIN_LOGS_TABLE = 'AdminLogs';
  */
 async function updateIssueStatus(issueId, status, resolution = null) {
   try {
-    // Validate status values
-    const validStatuses = ['pendiente', 'en_proceso', 'resuelto'];
-    if (!validStatuses.includes(status)) {
-      throw new Error(`Estado inválido. Debe ser: ${validStatuses.join(', ')}`);
+    if (!['PENDING', 'IN_PROGRESS', 'RESOLVED'].includes(status)) {
+      throw new Error('Estado inválido. Debe ser PENDING, IN_PROGRESS o RESOLVED');
     }
 
-    if (!issueId) {
-      throw new Error('ID de incidencia es requerido');
-    }
-
-    // Update the issue in DynamoDB
     const params = {
       TableName: ISSUES_TABLE,
       Key: { IssueNumber: issueId },
-      UpdateExpression: 'SET estado = :status, lastUpdated = :timestamp',
+      UpdateExpression: 'SET #estado = :status, lastUpdated = :timestamp',
+      ExpressionAttributeNames: {
+        '#status': 'status'
+      },
       ExpressionAttributeValues: {
         ':status': status,
         ':timestamp': new Date().toISOString()
@@ -36,31 +32,17 @@ async function updateIssueStatus(issueId, status, resolution = null) {
       ReturnValues: 'ALL_NEW'
     };
 
-    // Add resolution comment if provided and status is 'resuelto'
-    if (resolution && status === 'resuelto') {
+    // Si hay comentario de resolución, lo añadimos
+    if (resolution && status === 'RESOLVED') {
       params.UpdateExpression += ', resolution = :resolution';
       params.ExpressionAttributeValues[':resolution'] = resolution;
     }
 
     const result = await dynamoDB.update(params).promise();
-    
-    // Log the status change
-    await dynamoDB.put({
-      TableName: ADMIN_LOGS_TABLE,
-      Item: {
-        operacion: 'UPDATE_ISSUE_STATUS',
-        timestamp: new Date().toISOString(),
-        issueId,
-        oldStatus: null, // We don't have the old status in this implementation
-        newStatus: status,
-        usuario: 'ADMIN' // In a real implementation, you'd get this from auth context
-      }
-    }).promise();
-
     return result.Attributes;
   } catch (error) {
-    console.error(`❌ Error al actualizar estado de la incidencia ${issueId}:`, error);
-    throw new Error(`Error al actualizar estado: ${error.message}`);
+    console.error(`❌ Error al actualizar estado del problema ${issueId}:`, error);
+    throw new Error(`Error al actualizar estado del problema: ${error.message}`);
   }
 }
 

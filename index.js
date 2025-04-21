@@ -274,7 +274,7 @@ const postRoutes = {
       return createApiResponse(400, "Faltan campos requeridos: issueId y status son obligatorios");
     }
     
-    const result = await updateIssueStatus(issueId, status, resolution);
+    const result = await updateIssueStatusHandler(issueId, status, resolution);
     return createApiResponse(200, "Estado de la incidencia actualizado correctamente", result);
   }),
   

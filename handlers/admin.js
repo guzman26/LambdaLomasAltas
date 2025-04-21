@@ -139,7 +139,7 @@ async function updateIssueStatus(issueId, status, resolution = null) {
     const params = {
       TableName: ISSUES_TABLE,
       Key: { IssueNumber: issueId },
-      UpdateExpression: 'SET #status = :status, lastUpdated = :timestamp',
+      UpdateExpression: 'SET #estado = :status, lastUpdated = :timestamp',
       ExpressionAttributeNames: {
         '#status': 'status'
       },
