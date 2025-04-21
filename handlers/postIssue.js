@@ -19,7 +19,7 @@ const postIssue = async (descripcion) => {
       IssueNumber: uuidv4(),
       descripcion,
       timestamp: new Date().toISOString(),
-      estado: "pendiente",
+      estado: "PENDING",
     };
 
     const params = {
