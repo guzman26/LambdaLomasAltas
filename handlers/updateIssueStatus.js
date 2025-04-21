@@ -23,7 +23,7 @@ async function updateIssueStatus(issueId, status, resolution = null) {
       Key: { IssueNumber: issueId },
       UpdateExpression: 'SET #estado = :status, lastUpdated = :timestamp',
       ExpressionAttributeNames: {
-        '#status': 'estado'
+        '#estado': 'estado'
       },
       ExpressionAttributeValues: {
         ':status': status,
