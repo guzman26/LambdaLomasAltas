@@ -15,8 +15,8 @@ Resources:
   RegistrarHuevos:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./
-      Handler: dist/index.handler
+      CodeUri: dist
+      Handler: index.handler
       Environment:
         Variables:
           BOXES_TABLE_NAME: !Ref BoxesTable
