@@ -1,4 +1,4 @@
-const create = require('./create');
+const create = require('./create.js');
 const read = require('./read');
 const update = require('./update');
 const deleteIssue = require('./delete');
