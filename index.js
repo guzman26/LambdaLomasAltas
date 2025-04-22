@@ -2,7 +2,6 @@
 const SystemConfig = require('./models/SystemConfig');
 
 // Controllers
-const eggsController = require('./controllers/eggs');
 const palletsController = require('./controllers/pallets');
 const boxesController = require('./controllers/boxes');
 const issuesController = require('./controllers/issues');
@@ -17,6 +16,10 @@ const codepipeline = new AWS.CodePipeline();
 // Constants from models
 const LOCATIONS = SystemConfig.getLocations();
 const ITEM_TYPES = SystemConfig.getItemTypes();
+
+// Import the handlers with the new names
+const registerBox = require('./handlers/registerBox');
+const moveBox = require('./handlers/moveBox');
 
 // Helper functions
 const helpers = {
@@ -57,25 +60,25 @@ const createHandler = (handlerFn, options = {}) => {
 // Define GET routes
 const getRoutes = {
   "/getBodegaEggs": createHandler(async () => {
-    return await eggsController.read.getEggsByLocation(LOCATIONS.BODEGA);
+    return await boxesController.read.getBoxesByLocation(LOCATIONS.BODEGA);
   }),
   
   "/getPackingData": createHandler(async () => {
-    return await eggsController.read.getEggsByLocation(LOCATIONS.PACKING);
+    return await boxesController.read.getBoxesByLocation(LOCATIONS.PACKING);
   }),
   
   "/getVentaData": createHandler(async () => {
-    return await eggsController.read.getEggsByLocation(LOCATIONS.VENTA);
+    return await boxesController.read.getBoxesByLocation(LOCATIONS.VENTA);
   }),
   
   "/getEggsByDate": createHandler(async (event) => {
     const { date } = helpers.getQueryParams(event);
     helpers.validateRequired({ date }, ['date']);
-    return await eggsController.read.getEggsByDate(date);
+    return await boxesController.read.getBoxesByDate(date);
   }),
   
   "/production": createHandler(async () => {
-    return await eggsController.read.getAllEggs();
+    return await boxesController.read.getAllBoxes();
   }),
   
   "/getPallets": createHandler(async () => {
@@ -94,7 +97,7 @@ const getRoutes = {
   "/getEggsByCodigo": createHandler(async (event) => {
     const { codigo } = helpers.getQueryParams(event);
     helpers.validateRequired({ codigo }, ['codigo']);
-    return await eggsController.read.getEggByCode(codigo);
+    return await boxesController.read.getBoxByCode(codigo);
   }),
   
   "/getUnassignedBoxesInPacking": createHandler(async () => {
@@ -136,10 +139,10 @@ const postRoutes = {
     } else {
       if (ubicacion === CONFIG.LOCATIONS.PACKING) {
         return palletCodigo
-          ? await registerEgg(codigo, palletCodigo, palletCodigo, scannedCodes)
-          : await registerEgg(codigo);
+          ? await registerBox(codigo, palletCodigo, palletCodigo, scannedCodes)
+          : await registerBox(codigo);
       } else {
-        return await moveEgg(codigo, ubicacion);
+        return await moveBox(codigo, ubicacion);
       }
     }
   }),
@@ -157,7 +160,7 @@ const postRoutes = {
     helpers.validateRequired({ codigo }, ['codigo']);
     const pallet = await getSystemConfig("ACTIVE_PALLET_CODE");
     if (!pallet) throw { statusCode: 400, message: "No active pallet found. Please assign one." };
-    return await registerEgg(codigo, pallet, customInfo);
+    return await registerBox(codigo, pallet, customInfo);
   }),
 
   "/movePallet": createHandler(async (event) => {

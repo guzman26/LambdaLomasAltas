@@ -1,54 +1,28 @@
 const AWS = require("aws-sdk");
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
-
-const EGGS_TABLE = "Huevos";
+const BOXES_TABLE = "Boxes";
 
 /**
- * Función que obtiene los detalles de una caja, dado su código.
- * Espera un POST con JSON: { "codigo": "123456789012345" }
+ * Gets a box by its unique code
+ * @param {string} code - The box code
+ * @returns {Promise<object>} - The response object
  */
-async function getBoxByCode(codigo) {
+const getBoxByCode = async (code) => {
   try {
+    const { Item } = await dynamoDB.get({
+      TableName: BOXES_TABLE,
+      Key: { codigo: code }
+    }).promise();
     
-
-    if (!codigo) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ message: "⚠️ El campo 'codigo' es obligatorio." }),
-      };
+    if (!Item) {
+      return { success: false, message: `No box found with code ${code}` };
     }
-
-    const params = {
-      TableName: EGGS_TABLE,
-      Key: { codigo },
-    };
-
-    const { Item: box } = await dynamoDB.get(params).promise();
-
-    if (!box) {
-      return {
-        statusCode: 404,
-        body: JSON.stringify({ message: `❌ Caja con código "${codigo}" no encontrada.` }),
-      };
-    }
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: "✅ Caja encontrada",
-        data: box,
-      }),
-    };
+    
+    return { success: true, data: Item };
   } catch (error) {
-    console.error("❌ Error al buscar la caja:", error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        message: "❌ Error interno al buscar la caja.",
-        error: error.message,
-      }),
-    };
+    console.error(`Error retrieving box with code ${code}:`, error);
+    return { success: false, error: error.message };
   }
-}
+};
 
 module.exports = getBoxByCode;

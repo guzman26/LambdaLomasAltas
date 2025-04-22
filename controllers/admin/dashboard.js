@@ -1,7 +1,7 @@
 const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const SystemConfig = require('../../models/SystemConfig');
-const Egg = require('../../models/Egg');
+const Box = require('../../models/Box');
 const Pallet = require('../../models/Pallet');
 const Issue = require('../../models/Issue');
 const dbUtils = require('../../utils/db');
@@ -17,7 +17,7 @@ async function getSystemDashboard() {
     // Obtenemos conteos de elementos en cada ubicación
     const [packingEggs, bodegaEggs, ventaEggs, pallets, issues] = await Promise.all([
       dynamoDB.scan({
-        TableName: Egg.getTableName(),
+        TableName: Box.getTableName(),
         IndexName: 'ubicacion-index',
         KeyConditionExpression: '#ubicacion = :locationValue',
         ExpressionAttributeNames: { '#ubicacion': 'ubicacion' },
@@ -26,7 +26,7 @@ async function getSystemDashboard() {
       }).promise(),
       
       dynamoDB.scan({
-        TableName: Egg.getTableName(),
+        TableName: Box.getTableName(),
         IndexName: 'ubicacion-index',
         KeyConditionExpression: '#ubicacion = :locationValue',
         ExpressionAttributeNames: { '#ubicacion': 'ubicacion' },
@@ -35,7 +35,7 @@ async function getSystemDashboard() {
       }).promise(),
       
       dynamoDB.scan({
-        TableName: Egg.getTableName(),
+        TableName: Box.getTableName(),
         IndexName: 'ubicacion-index',
         KeyConditionExpression: '#ubicacion = :locationValue',
         ExpressionAttributeNames: { '#ubicacion': 'ubicacion' },

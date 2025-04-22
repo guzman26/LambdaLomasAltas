@@ -1,7 +1,7 @@
 const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
-const EGGS_TABLE = 'Huevos';
+const BOXES_TABLE = 'Boxes';
 const PALLETS_TABLE = 'Pallets';
 
 /**
@@ -16,7 +16,7 @@ async function deleteBox(boxCode) {
     // 1. First, get the box to check if it exists and if it has an associated pallet
     const { Item: box } = await dynamoDB
       .get({
-        TableName: EGGS_TABLE,
+        TableName: BOXES_TABLE,
         Key: { codigo: boxCode }
       })
       .promise();
@@ -65,7 +65,7 @@ async function deleteBox(boxCode) {
     // 3. Delete the box from the database
     await dynamoDB
       .delete({
-        TableName: EGGS_TABLE,
+        TableName: BOXES_TABLE,
         Key: { codigo: boxCode }
       })
       .promise();

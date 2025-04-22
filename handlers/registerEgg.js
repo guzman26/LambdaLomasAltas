@@ -117,9 +117,9 @@ const findMatchingPallet = async (boxData) => {
 };
 
 /**
- * Registers a new egg box and automatically assigns it to a matching pallet if found.
+ * Registers a new box and automatically assigns it to a matching pallet if found.
  */
-const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) => {
+const registerBox = async (code, _unusedPalletCode, palletCode, scannedCodes) => {
     // Check if this box was recently processed
     const now = Date.now();
     const lastProcessed = recentlyProcessedBoxes.get(code);
@@ -130,7 +130,7 @@ const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) =>
       // Instead of rejecting, let's try to get the current state of the box
       try {
         const { Item: existingBox } = await dynamoDB.get({
-          TableName: "Huevos",
+          TableName: "Boxes",
           Key: { codigo: code }
         }).promise();
         
@@ -172,7 +172,7 @@ const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) =>
     // Step 3: Save the box to the DB
     try {
       await dynamoDB.put({
-        TableName: "Huevos",
+        TableName: "Boxes",
         Item: newBox
       }).promise();
       console.log("✅ Caja guardada en DynamoDB:", newBox.codigo);
@@ -197,60 +197,20 @@ const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) =>
         return createApiResponse(400, `⚠️ Caja registrada pero no se encontró pallet compatible`, newBox);
       }
     }
-    else{
-      try {
-        // Verificar si el pallet ya existe para evitar duplicación
-        const { Item: existingPallet } = await dynamoDB.get({
-          TableName: "Pallets",
-          Key: { codigo: palletCode }
-        }).promise();
-        
-        if (existingPallet) {
-          // Verificar primero si la caja ya está en el pallet para evitar duplicación
-          if (existingPallet.cajas && existingPallet.cajas.includes(newBox.codigo)) {
-            // Si la caja ya está en el pallet, solo actualizar la referencia en la caja
-            await dynamoDB.update({
-              TableName: "Huevos",
-              Key: { codigo: newBox.codigo },
-              UpdateExpression: 'SET palletId = :palletId',
-              ExpressionAttributeValues: {
-                ':palletId': palletCode,
-              },
-            }).promise();
-            
-            return createApiResponse(200, `✅ Caja ya asignada al pallet ${existingPallet.codigo}`, {
-              ...newBox,
-              palletId: existingPallet.codigo,
-            });
-          } else {
-            // Si la caja no está en el pallet, proceder con la asignación normal
-            const updatedPallet = await addBoxToPallet(palletCode, newBox.codigo);
-            return createApiResponse(200, `✅ Caja asignada al pallet ${updatedPallet.codigo}`, {
-              ...newBox,
-              palletId: updatedPallet.codigo,
-            });
-          }
-        } else {
-          // Si el pallet no existe, entonces lo creamos
-          const assignedPalletResponse = await createPallet(palletCode, "PACKING");
-          const parsed = JSON.parse(assignedPalletResponse.body);
-          const assignedPalletCode = parsed?.data?.codigo;
-          const updatedPallet = await addBoxToPallet(assignedPalletCode, newBox.codigo);
-          return createApiResponse(200, `✅ Caja asignada al pallet ${updatedPallet.codigo}`, {
-            ...newBox,
-            palletId: updatedPallet.codigo,
-          });
-        }
+    else {
+      try{
+        // Assign to specified pallet
+        console.log(`🔄 Assigning box ${code} to pallet ${palletCode}`);
+        const updatedPallet = await addBoxToPallet(palletCode, code);
+        return createApiResponse(200, `✅ Caja asignada al pallet ${updatedPallet.codigo}`, {
+          ...newBox,
+          palletId: updatedPallet.codigo,
+        });
       } catch (assignError) {
-        console.error("❌ Error assigning pallet:", assignError.message);
-        return createApiResponse(400, `❌ Caja registrada pero no pudo ser asignada (asignación fallida): ${assignError.message}`);
+        console.error("❌ Error assigning to pallet:", assignError.message);
+        return createApiResponse(400, `⚠️ Caja registrada pero no asignada: ${assignError.message}`, newBox);
       }
     }
-    
-  
-    // Step 6: No pallet available
-    return createApiResponse(200, `⚠️ Caja registrada pero no se encontró pallet compatible`, newBox);
-  };
-  
+};
 
-module.exports = registerEgg;
+module.exports = registerBox;

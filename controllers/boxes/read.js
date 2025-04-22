@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
-const Egg = require('../../models/Egg');
+const Box = require('../../models/Box');
 const SystemConfig = require('../../models/SystemConfig');
 const dbUtils = require('../../utils/db');
 const createApiResponse = require('../../utils/response');
@@ -12,7 +12,7 @@ const createApiResponse = require('../../utils/response');
  */
 async function getBoxByCode(code) {
   try {
-    const box = await dbUtils.getItem(Egg.getTableName(), { codigo: code });
+    const box = await dbUtils.getItem(Box.getTableName(), { codigo: code });
     if (!box) {
       return createApiResponse(404, `Box with code ${code} not found`);
     }
@@ -30,7 +30,7 @@ async function getBoxByCode(code) {
 async function getUnassignedBoxesInPacking() {
   try {
     const boxes = await dbUtils.scanItems(
-      Egg.getTableName(),
+      Box.getTableName(),
       'ubicacion = :location AND attribute_not_exists(palletId)',
       { ':location': SystemConfig.getLocations().PACKING }
     );

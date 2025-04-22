@@ -2,7 +2,7 @@ const AWS = require("aws-sdk");
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 const PALLETS_TABLE = "Pallets";
-const EGGS_TABLE = "Huevos";
+const BOXES_TABLE = "Boxes";
 
 /**
  * Parses a date-caliber-format string into its components
@@ -62,7 +62,7 @@ async function addBoxToPallet(palletId, boxCode) {
   
       // 2. Fetch the box
       const { Item: box } = await dynamoDB
-        .get({ TableName: EGGS_TABLE, Key: { codigo: boxCode } })
+        .get({ TableName: BOXES_TABLE, Key: { codigo: boxCode } })
         .promise();
   
       if (!box) throw new Error(`Box "${boxCode}" does not exist.`);
@@ -115,7 +115,7 @@ async function addBoxToPallet(palletId, boxCode) {
       // 5. Update the box with the palletId
       await dynamoDB
         .update({
-          TableName: EGGS_TABLE,
+          TableName: BOXES_TABLE,
           Key: { codigo: boxCode },
           UpdateExpression: 'SET palletId = :palletId',
           ExpressionAttributeValues: {

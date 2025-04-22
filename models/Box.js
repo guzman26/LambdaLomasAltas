@@ -27,6 +27,14 @@ class Box {
     }
     return boxCode.slice(0, 9);
   }
+
+  /**
+   * Returns the name of the DynamoDB table for boxes
+   * @returns {string} Table name
+   */
+  static getTableName() {
+    return process.env.BOXES_TABLE_NAME || 'Boxes';
+  }
 }
 
 module.exports = Box; 

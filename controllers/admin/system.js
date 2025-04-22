@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const s3 = new AWS.S3();
 const SystemConfig = require('../../models/SystemConfig');
-const Egg = require('../../models/Egg');
+const Box = require('../../models/Box');
 const Pallet = require('../../models/Pallet');
 const Issue = require('../../models/Issue');
 const dbUtils = require('../../utils/db');
@@ -71,7 +71,7 @@ async function auditAndFixData() {
     };
 
     // 1. Verificar huevos con referencias a pallets inexistentes
-    const huevos = await dbUtils.scanItems(Egg.getTableName());
+    const huevos = await dbUtils.scanItems(Box.getTableName());
     const pallets = await dbUtils.scanItems(Pallet.getTableName());
     const palletIds = new Set(pallets.map(p => p.id || p.codigo));
 
@@ -81,7 +81,7 @@ async function auditAndFixData() {
         
         // Corregir eliminando la referencia al pallet
         await dbUtils.updateItem(
-          Egg.getTableName(),
+          Box.getTableName(),
           { codigo: huevo.codigo },
           'REMOVE palletId',
           { ':pid': huevo.palletId }
@@ -147,7 +147,7 @@ async function backupData() {
     
     // Ejecutar exportaciones de cada tabla
     const tables = [
-      Egg.getTableName(),
+      Box.getTableName(),
       Pallet.getTableName(),
       Issue.getTableName(),
       SystemConfig.getConfigTable()
