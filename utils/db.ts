@@ -159,4 +159,11 @@ const dbUtils = {
   }
 };
 
-export default dbUtils; 
+export default {
+  getItem: dbUtils.getItem,
+  putItem: dbUtils.putItem,
+  updateItem: dbUtils.updateItem,
+  deleteItem: dbUtils.deleteItem,
+  queryItems: dbUtils.queryItems,
+  scanItems: dbUtils.scanItems
+}; 

@@ -11,3 +11,9 @@ export declare const getActivePallets: () => Promise<ApiResponse>;
  * Gets closed pallets
  */
 export declare const getClosedPallets: (ubicacion?: string) => Promise<ApiResponse>;
+declare const _default: {
+    getAllPallets: () => Promise<ApiResponse>;
+    getActivePallets: () => Promise<ApiResponse>;
+    getClosedPallets: (ubicacion?: string) => Promise<ApiResponse>;
+};
+export default _default;

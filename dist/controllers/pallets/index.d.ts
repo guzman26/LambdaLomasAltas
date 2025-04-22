@@ -1,13 +1,20 @@
-import { createPallet } from './create';
-import * as read from './read';
-import * as update from './update';
-import deletePallet from './delete';
+import createPallet from './create';
 declare const _default: {
     create: {
         createPallet: typeof createPallet;
     };
-    read: typeof read;
-    update: typeof update;
-    delete: typeof deletePallet;
+    read: {
+        getAllPallets: () => Promise<import("../../types").ApiResponse>;
+        getActivePallets: () => Promise<import("../../types").ApiResponse>;
+        getClosedPallets: (ubicacion?: string) => Promise<import("../../types").ApiResponse>;
+    };
+    update: {
+        updatePalletLocation: (codigo: string, location: import("../../types").Location) => Promise<import("../../types").Pallet>;
+        updatePalletStatus: (codigo: string, status: "ACTIVE" | "CLOSED") => Promise<import("../../types").Pallet>;
+        addBoxToPallet: (palletCodigo: string, boxCodigo: string) => Promise<import("../../types").Pallet>;
+    };
+    delete: {
+        deletePallet: (palletCode: string) => Promise<import("./delete").DeleteResult>;
+    };
 };
 export default _default;

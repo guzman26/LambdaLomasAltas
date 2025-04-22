@@ -81,7 +81,7 @@ async function addBoxToPallet(palletCodigo: string, boxCodigo: string): Promise<
   return Attributes as Pallet;
 }
 
-export {
+export default {
   updatePalletLocation,
   updatePalletStatus,
   addBoxToPallet

@@ -20,4 +20,9 @@ declare function updatePalletStatus(codigo: string, status: 'ACTIVE' | 'CLOSED')
  * @returns The updated pallet
  */
 declare function addBoxToPallet(palletCodigo: string, boxCodigo: string): Promise<Pallet>;
-export { updatePalletLocation, updatePalletStatus, addBoxToPallet };
+declare const _default: {
+    updatePalletLocation: typeof updatePalletLocation;
+    updatePalletStatus: typeof updatePalletStatus;
+    addBoxToPallet: typeof addBoxToPallet;
+};
+export default _default;

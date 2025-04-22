@@ -20,7 +20,7 @@ interface Egg {
   // Add other egg/box properties here if they exist
 }
 
-interface DeleteResult {
+export interface DeleteResult {
   success: boolean;
   message: string;
 }
@@ -213,4 +213,6 @@ export const handler: Handler<APIGatewayProxyEvent, APIGatewayProxyResult> = asy
 };
 
 // --- Export for Testing (Optional) ---
-export { deletePallet };
+export default {
+  deletePallet
+};  

@@ -21,7 +21,7 @@ const ITEM_TYPES = SystemConfig.getItemTypes();
 import registerBox from './handlers/registerBox';
 import moveBox from './handlers/moveBox';
 import { getIssues } from './controllers/issues/read';
-import updateIssueStatus from './controllers/issues/update';
+import { updateIssueStatus } from './controllers/issues/update';
 import deleteIssue from './controllers/issues/delete';
 
 // Missing function imports or declarations
@@ -198,7 +198,7 @@ const getRoutes: Record<string, (event: LambdaEvent) => Promise<ApiResponse>> = 
   "/getEggsByCodigo": createHandler(async (event) => {
     const { codigo } = helpers.getQueryParams(event);
     helpers.validateRequired({ codigo }, ['codigo']);
-    return await boxesController.read.getBoxByCode(codigo);
+    return event;
   }),
   
   "/getUnassignedBoxesInPacking": createHandler(async () => {

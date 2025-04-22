@@ -2,7 +2,7 @@ import AWS from 'aws-sdk';
 import { ApiResponse, Location } from '../types';
 import PalletModel from '../models/Pallet';
 import SystemConfig from '../models/SystemConfig';
-import * as dbUtils from '../utils/db';
+import dbUtils from '../utils/db';
 import createApiResponse from '../utils/response';
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();

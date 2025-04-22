@@ -2,28 +2,10 @@ import AWS from 'aws-sdk';
 import { ApiResponse } from '../../types';
 import Box from '../../models/Box';
 import SystemConfig from '../../models/SystemConfig';
-import * as dbUtils from '../../utils/db';
+import dbUtils from '../../utils/db';
 import createApiResponse from '../../utils/response';
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
-
-/**
- * Get a box by its code
- * @param {string} code - Box code
- * @returns {Promise<ApiResponse>} API response
- */
-export async function getBoxByCode(code: string): Promise<ApiResponse> {
-  try {
-    const box = await dbUtils.getItem(Box.getTableName(), { codigo: code });
-    if (!box) {
-      return createApiResponse(404, `Box with code ${code} not found`);
-    }
-    return createApiResponse(200, "Box data fetched successfully", box);
-  } catch (error) {
-    console.error(`❌ Error retrieving box ${code}:`, error);
-    return createApiResponse(500, `Error retrieving box: ${(error as Error).message}`);
-  }
-}
 
 /**
  * Get boxes by location
@@ -97,7 +79,6 @@ export async function getUnassignedBoxesInPacking(): Promise<ApiResponse> {
 }
 
 export default {
-  getBoxByCode,
   getUnassignedBoxesInPacking,
   getBoxesByLocation,
   getAllBoxes,

@@ -5,7 +5,7 @@ import PalletModel from '../../models/Pallet';
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
-interface DeleteResult {
+export interface DeleteResult {
   success: boolean;
   message: string;
 }

@@ -1,11 +1,12 @@
-import { Location } from '../../types';
 declare const _default: {
+    create: (boxData: Partial<import("../../types").Box>) => Promise<import("../../types").Box>;
     read: {
-        getBoxesByLocation: (location: Location) => Promise<import("../../types").ApiResponse>;
-        getBoxesByDate: (date: string) => Promise<import("../../types").ApiResponse>;
-        getAllBoxes: () => Promise<import("../../types").ApiResponse>;
-        getBoxByCode: (code: string) => Promise<import("../../types").ApiResponse>;
-        getUnassignedBoxesInPacking: () => Promise<import("../../types").ApiResponse>;
+        getUnassignedBoxesInPacking: typeof import("./read").getUnassignedBoxesInPacking;
+        getBoxesByLocation: typeof import("./read").getBoxesByLocation;
+        getAllBoxes: typeof import("./read").getAllBoxes;
+        getBoxesByDate: typeof import("./read").getBoxesByDate;
     };
+    update: (codigo: string, updateData: Partial<import("../../types").Box>) => Promise<import("../../types").Box>;
+    delete: (codigo: string) => Promise<import("./delete").DeleteResult>;
 };
 export default _default;

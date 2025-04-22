@@ -1,8 +1,8 @@
-import { Pallet } from '../../types';
+import { ApiResponse } from "../../types";
 /**
- * Creates a new pallet in the database
- * @param codigo - The pallet code
- * @returns The created pallet object
+ * Handles the creation of a new pallet, appending a unique 3-digit number to the base code.
+ * @param {string} baseCode - The 9-digit base code (DSSYYHF)
+ * @returns {Promise<ApiResponse>} API response with the created pallet or an error.
  */
-declare function createPallet(codigo: string): Promise<Pallet>;
-export { createPallet };
+export declare function handleCreatePallet(baseCode: string): Promise<ApiResponse>;
+export default handleCreatePallet;

@@ -38,8 +38,7 @@ export async function getSystemDashboard(): Promise<ApiResponse> {
       dynamoDB.scan({
         TableName: Box.getTableName(),
         IndexName: 'ubicacion-index',
-        KeyConditionExpression: '#ubicacion = :locationValue',
-        ExpressionAttributeNames: { '#ubicacion': 'ubicacion' },
+        FilterExpression: 'ubicacion = :locationValue',
         ExpressionAttributeValues: { ':locationValue': 'PACKING' },
         Select: 'COUNT'
       }).promise(),
@@ -47,8 +46,7 @@ export async function getSystemDashboard(): Promise<ApiResponse> {
       dynamoDB.scan({
         TableName: Box.getTableName(),
         IndexName: 'ubicacion-index',
-        KeyConditionExpression: '#ubicacion = :locationValue',
-        ExpressionAttributeNames: { '#ubicacion': 'ubicacion' },
+        FilterExpression: 'ubicacion = :locationValue',
         ExpressionAttributeValues: { ':locationValue': 'BODEGA' },
         Select: 'COUNT'
       }).promise(),
@@ -56,8 +54,7 @@ export async function getSystemDashboard(): Promise<ApiResponse> {
       dynamoDB.scan({
         TableName: Box.getTableName(),
         IndexName: 'ubicacion-index',
-        KeyConditionExpression: '#ubicacion = :locationValue',
-        ExpressionAttributeNames: { '#ubicacion': 'ubicacion' },
+        FilterExpression: 'ubicacion = :locationValue',
         ExpressionAttributeValues: { ':locationValue': 'VENTA' },
         Select: 'COUNT'
       }).promise(),

@@ -78,3 +78,9 @@ export const getClosedPallets = async (ubicacion?: string): Promise<ApiResponse>
     return createApiResponse(500, (error as Error).message);
   }
 }; 
+
+export default {
+  getAllPallets,
+  getActivePallets,
+  getClosedPallets
+};
