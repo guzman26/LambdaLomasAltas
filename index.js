@@ -1,56 +1,24 @@
-const getEggs = require("./handlers/getEggs");
-const getBodegaEggs = require("./handlers/getBodegaEggs");
-const getPackingEggs = require("./handlers/getPackingEggs");
-const getVentaEggs = require("./handlers/getVentaEggs");
-const getEggByCodigo = require("./handlers/getEggsByCodigo");
-const getEggsByDate = require("./handlers/getEggsByDate");
-const registerEgg = require("./handlers/registerEgg");
-const getPallets = require("./handlers/getPallets");
-const { moveEgg } = require("./handlers/moveEgg");
-const { movePallet } = require("./handlers/movePallet");
-const createApiResponse = require("./utils/response");
-const assignPallet = require("./handlers/assignPallet");
-const addBoxToPallet = require("./handlers/addBoxToPallet");
-const { setSystemConfig, getSystemConfig } = require("./handlers/systemConfig");
-const closePallet = require("./handlers/closePallet");
-const createPallet = require("./handlers/createPallet");
-const updateBoxDescription = require("./handlers/updateBoxDescription");
-const getActivePallets = require("./handlers/getActivePallets");
-const getClosedPallets = require("./handlers/getClosedPallets");
-const getBoxesInPallet = require("./handlers/getBoxesInPallet");
-const getBoxByCode = require("./handlers/getBoxByCode");
-const getUnassignedBoxesInPacking = require("./handlers/getUnassignedBoxesInPacking");
-const postIssue = require("./handlers/postIssue");
-const deleteBox = require("./handlers/deleteBox");
-const deletePallet = require("./handlers/deletePallet");
-const updateIssueStatusHandler = require("./handlers/updateIssueStatus");
+// Models
+const SystemConfig = require('./models/SystemConfig');
+
+// Controllers
+const eggsController = require('./controllers/eggs');
+const palletsController = require('./controllers/pallets');
+const boxesController = require('./controllers/boxes');
+const issuesController = require('./controllers/issues');
+const adminController = require('./controllers/admin');
+const reportsController = require('./controllers/reports');
+
+// Utils
+const createApiResponse = require('./utils/response');
 const AWS = require('aws-sdk');
 const codepipeline = new AWS.CodePipeline();
 
-const { 
-  getSystemDashboard, 
-  getIssues,
-  auditAndFixData, 
-  backupData,
-  updateIssueStatus,
-  deleteIssue
-} = require("./handlers/admin");
-const { generateReportHandler } = require("./handlers/generateReports");
-const { generateExcelReportHandler, generateCustomReportHandler } = require("./handlers/generateExcelReports");
+// Constants from models
+const LOCATIONS = SystemConfig.getLocations();
+const ITEM_TYPES = SystemConfig.getItemTypes();
 
-const CONFIG = {
-  LOCATIONS: {
-    PACKING: "PACKING",
-    BODEGA: "BODEGA",
-    VENTA: "VENTA",
-    TRANSITO: "TRANSITO",
-  },
-  ITEM_TYPES: {
-    BOX: "BOX",
-    PALLET: "PALLET",
-  },
-};
-
+// Helper functions
 const helpers = {
   parseBody: (event) => {
     if (!event.body) return {};
@@ -74,7 +42,7 @@ const helpers = {
   },
 };
 
-
+// Create a handler wrapper to standardize error handling
 const createHandler = (handlerFn, options = {}) => {
   return async (event) => {
     try {
@@ -86,36 +54,57 @@ const createHandler = (handlerFn, options = {}) => {
   };
 };
 
+// Define GET routes
 const getRoutes = {
-  "/getBodegaEggs": getBodegaEggs,
-  "/getPackingData": getPackingEggs,
-  "/getVentaData": getVentaEggs,
-  "/getEggsByDate": getEggsByDate,
-  "/production": getEggs,
-  "/getPallets": getPallets,
-  "/getActivePallets": createHandler(async () => {
-    const result = await getActivePallets();
-    return createApiResponse(200, "Active pallets fetched successfully", result);
+  "/getBodegaEggs": createHandler(async () => {
+    return await eggsController.read.getEggsByLocation(LOCATIONS.BODEGA);
   }),
+  
+  "/getPackingData": createHandler(async () => {
+    return await eggsController.read.getEggsByLocation(LOCATIONS.PACKING);
+  }),
+  
+  "/getVentaData": createHandler(async () => {
+    return await eggsController.read.getEggsByLocation(LOCATIONS.VENTA);
+  }),
+  
+  "/getEggsByDate": createHandler(async (event) => {
+    const { date } = helpers.getQueryParams(event);
+    helpers.validateRequired({ date }, ['date']);
+    return await eggsController.read.getEggsByDate(date);
+  }),
+  
+  "/production": createHandler(async () => {
+    return await eggsController.read.getAllEggs();
+  }),
+  
+  "/getPallets": createHandler(async () => {
+    return await palletsController.read.getAllPallets();
+  }),
+  
+  "/getActivePallets": createHandler(async () => {
+    return await palletsController.read.getActivePallets();
+  }),
+  
   "/getClosedPallets": createHandler(async (event) => {
     const { ubicacion } = helpers.getQueryParams(event);
-    const result = await getClosedPallets(ubicacion);
-    return createApiResponse(200, "Closed pallets fetched successfully", result);
+    return await palletsController.read.getClosedPallets(ubicacion);
   }),
+  
   "/getEggsByCodigo": createHandler(async (event) => {
     const { codigo } = helpers.getQueryParams(event);
     helpers.validateRequired({ codigo }, ['codigo']);
-    const result = await getEggByCodigo(codigo);
-    return createApiResponse(200, "Egg data fetched successfully", result);
+    return await eggsController.read.getEggByCode(codigo);
   }),
+  
   "/getUnassignedBoxesInPacking": createHandler(async () => {
-    const result = await getUnassignedBoxesInPacking();
-    return createApiResponse(200, "Unassigned boxes in packing fetched successfully", result);
+    return await boxesController.read.getUnassignedBoxesInPacking();
   }),
+  
   "/admin/dashboard": createHandler(async () => {
-    const result = await getSystemDashboard();
-    return createApiResponse(200, "Dashboard data fetched successfully", result);
+    return await adminController.getSystemDashboard();
   }),
+  
   "/admin/issues": createHandler(async (event) => {
     const { status, startDate, endDate } = helpers.getQueryParams(event);
     const result = await getIssues({ status, startDate, endDate });

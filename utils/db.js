@@ -37,6 +37,168 @@ function parseFechaCalibreFormato(fcf) {
 }
 
 /**
+ * Utility functions for database operations
+ */
+const dbUtils = {
+  /**
+   * Generic function to get an item by its key from a table
+   * @param {string} tableName - Table name
+   * @param {object} key - Key object
+   * @returns {Promise<Object>} Item
+   */
+  async getItem(tableName, key) {
+    try {
+      const params = {
+        TableName: tableName,
+        Key: key
+      };
+      const result = await dynamoDB.get(params).promise();
+      return result.Item || null;
+    } catch (error) {
+      console.error(`❌ Error getting item from ${tableName}:`, error);
+      throw new Error(`Error getting item from ${tableName}`);
+    }
+  },
+
+  /**
+   * Generic function to put an item in a table
+   * @param {string} tableName - Table name
+   * @param {object} item - Item to put
+   * @returns {Promise<Object>} Result
+   */
+  async putItem(tableName, item) {
+    try {
+      const params = {
+        TableName: tableName,
+        Item: item
+      };
+      return await dynamoDB.put(params).promise();
+    } catch (error) {
+      console.error(`❌ Error putting item in ${tableName}:`, error);
+      throw new Error(`Error putting item in ${tableName}`);
+    }
+  },
+
+  /**
+   * Generic function to update an item in a table
+   * @param {string} tableName - Table name
+   * @param {object} key - Key object
+   * @param {string} updateExpression - Update expression
+   * @param {object} expressionAttributeValues - Expression attribute values
+   * @param {object} expressionAttributeNames - Expression attribute names
+   * @returns {Promise<Object>} Updated item
+   */
+  async updateItem(tableName, key, updateExpression, expressionAttributeValues, expressionAttributeNames = null) {
+    try {
+      const params = {
+        TableName: tableName,
+        Key: key,
+        UpdateExpression: updateExpression,
+        ExpressionAttributeValues: expressionAttributeValues,
+        ReturnValues: "ALL_NEW"
+      };
+
+      if (expressionAttributeNames) {
+        params.ExpressionAttributeNames = expressionAttributeNames;
+      }
+
+      const result = await dynamoDB.update(params).promise();
+      return result.Attributes;
+    } catch (error) {
+      console.error(`❌ Error updating item in ${tableName}:`, error);
+      throw new Error(`Error updating item in ${tableName}`);
+    }
+  },
+
+  /**
+   * Generic function to delete an item from a table
+   * @param {string} tableName - Table name
+   * @param {object} key - Key object
+   * @returns {Promise<Object>} Deleted item
+   */
+  async deleteItem(tableName, key) {
+    try {
+      const params = {
+        TableName: tableName,
+        Key: key,
+        ReturnValues: "ALL_OLD"
+      };
+      const result = await dynamoDB.delete(params).promise();
+      return result.Attributes;
+    } catch (error) {
+      console.error(`❌ Error deleting item from ${tableName}:`, error);
+      throw new Error(`Error deleting item from ${tableName}`);
+    }
+  },
+
+  /**
+   * Generic function to query items from a table
+   * @param {string} tableName - Table name
+   * @param {string} keyConditionExpression - Key condition expression
+   * @param {object} expressionAttributeValues - Expression attribute values
+   * @param {object} expressionAttributeNames - Expression attribute names
+   * @returns {Promise<Array>} Items
+   */
+  async queryItems(tableName, keyConditionExpression, expressionAttributeValues, expressionAttributeNames = null, indexName = null) {
+    try {
+      const params = {
+        TableName: tableName,
+        KeyConditionExpression: keyConditionExpression,
+        ExpressionAttributeValues: expressionAttributeValues
+      };
+
+      if (expressionAttributeNames) {
+        params.ExpressionAttributeNames = expressionAttributeNames;
+      }
+
+      if (indexName) {
+        params.IndexName = indexName;
+      }
+
+      const result = await dynamoDB.query(params).promise();
+      return result.Items || [];
+    } catch (error) {
+      console.error(`❌ Error querying items from ${tableName}:`, error);
+      throw new Error(`Error querying items from ${tableName}`);
+    }
+  },
+
+  /**
+   * Generic function to scan items from a table
+   * @param {string} tableName - Table name
+   * @param {string} filterExpression - Filter expression
+   * @param {object} expressionAttributeValues - Expression attribute values
+   * @param {object} expressionAttributeNames - Expression attribute names
+   * @returns {Promise<Array>} Items
+   */
+  async scanItems(tableName, filterExpression = null, expressionAttributeValues = null, expressionAttributeNames = null) {
+    try {
+      const params = {
+        TableName: tableName
+      };
+
+      if (filterExpression) {
+        params.FilterExpression = filterExpression;
+      }
+
+      if (expressionAttributeValues) {
+        params.ExpressionAttributeValues = expressionAttributeValues;
+      }
+
+      if (expressionAttributeNames) {
+        params.ExpressionAttributeNames = expressionAttributeNames;
+      }
+
+      const result = await dynamoDB.scan(params).promise();
+      return result.Items || [];
+    } catch (error) {
+      console.error(`❌ Error scanning items from ${tableName}:`, error);
+      throw new Error(`Error scanning items from ${tableName}`);
+    }
+  }
+};
+
+/**
  * Database operations for eggs and pallets
  */
 const databaseService = {
