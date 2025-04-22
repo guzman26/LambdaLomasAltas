@@ -117,4 +117,111 @@ The project has been organized according to a CRUD-based structure for each enti
 3. Deploy:
    ```
    npm run deploy
-   ``` 
+   ```
+
+## TypeScript Enhancements
+
+Se han completado las siguientes mejoras adicionales al proyecto con TypeScript:
+
+1. **Todos los modelos convertidos a TypeScript:**
+   - Box.ts
+   - Pallet.ts
+   - Issue.ts
+   - SystemConfig.ts
+
+2. **Todos los controladores convertidos a TypeScript:**
+   - controllers/pallets
+   - controllers/boxes
+   - controllers/admin
+   - controllers/issues
+   - controllers/reports
+
+3. **Pruebas mejoradas:**
+   - Prueba multiple endpoints con un solo comando
+   - Script `test:endpoint` para probar endpoints específicos
+
+### Scripts adicionales
+
+```bash
+# Ejecutar todas las pruebas
+npm run test:local
+
+# Probar un endpoint específico
+npm run test:endpoint movePallet
+
+# Verificar tipos sin compilar
+npm run typegen
+```
+
+### Estructura del Proyecto en TypeScript
+
+```
+/
+├── models/                  # Modelos de datos (TypeScript)
+│   ├── Box.ts               # Modelo de cajas
+│   ├── Pallet.ts            # Modelo de pallets
+│   ├── Issue.ts             # Modelo de incidencias
+│   └── SystemConfig.ts      # Configuración del sistema
+│
+├── controllers/             # Controladores CRUD (TypeScript)
+│   ├── boxes/
+│   ├── pallets/
+│   ├── issues/
+│   ├── admin/
+│   └── reports/
+│
+├── utils/                   # Utilidades (TypeScript)
+│   ├── db.ts                # Utilidades de base de datos
+│   ├── response.ts          # Formateador de respuestas API
+│   ├── dynamoDb.ts          # Wrapper para DynamoDB
+│   └── mockDb.ts            # Simulador de DB para pruebas
+│
+├── handlers/                # Manejadores Lambda
+│   ├── movePallet.ts
+│   ├── moveBox.ts
+│   └── registerBox.ts
+│
+├── types/                   # Definiciones de tipos
+│   └── index.ts             # Tipos centralizados
+│
+├── dist/                    # Archivos compilados (generados)
+├── index.ts                 # Punto de entrada principal
+├── tsconfig.json            # Configuración de TypeScript
+└── package.json             # Configuración del proyecto
+```
+
+## TypeScript Conversion
+
+This project has been fully converted to TypeScript to provide better type safety and developer experience. The TypeScript conversion includes:
+
+1. Added TypeScript configuration in `tsconfig.json`
+2. Created type definitions for all domain entities
+3. Converted JavaScript files to TypeScript
+4. Added build scripts for TypeScript compilation
+5. Updated test scripts to work with TypeScript
+
+### Project Structure
+
+The project now follows these conventions:
+- Source files are TypeScript (`.ts`)
+- Compiled JavaScript files are placed in the `dist` directory
+- Type definitions are in `types/index.ts`
+
+### Available Scripts
+
+- `npm run build` - Cleans and compiles TypeScript to JavaScript
+- `npm run clean` - Removes the dist directory
+- `npm run start` - Runs the compiled JavaScript
+- `npm run dev` - Runs TypeScript in watch mode for development
+- `npm run test:local` - Builds and runs the local test
+- `npm run deploy` - Builds and packages the function for deployment
+
+### Running Locally
+
+To test the Lambda function locally:
+
+```bash
+npm run test:local
+```
+
+This will build the TypeScript code and run the local test that simulates an API Gateway event. 
