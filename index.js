@@ -4,9 +4,7 @@ const SystemConfig = require('./models/SystemConfig');
 // Controllers
 const palletsController = require('./controllers/pallets');
 const boxesController = require('./controllers/boxes');
-const issuesController = require('./controllers/issues');
 const adminController = require('./controllers/admin');
-const reportsController = require('./controllers/reports');
 
 // Utils
 const createApiResponse = require('./utils/response');

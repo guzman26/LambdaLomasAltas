@@ -23,6 +23,21 @@ async function getBoxByCode(code) {
   }
 }
 
+async function getBoxesByLocation(location) {
+  try {
+    const boxes = await dbUtils.scanItems(
+      Box.getTableName(),
+      'ubicacion = :location',
+      { ':location': location }
+    );
+    return createApiResponse(200, "Boxes fetched successfully", boxes);
+  } catch (error) {
+    console.error('❌ Error retrieving boxes by location:', error);
+    return createApiResponse(500, `Error retrieving boxes: ${error.message}`);
+  }
+}
+
+
 /**
  * Get unassigned boxes in packing
  * @returns {Promise<Object>} API response
@@ -43,5 +58,6 @@ async function getUnassignedBoxesInPacking() {
 
 module.exports = {
   getBoxByCode,
-  getUnassignedBoxesInPacking
+  getUnassignedBoxesInPacking,
+  getBoxesByLocation
 }; 
