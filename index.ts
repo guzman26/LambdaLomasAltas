@@ -10,6 +10,7 @@ import adminController from './controllers/admin';
 import createApiResponse from './utils/response';
 import AWS from 'aws-sdk';
 import { LambdaEvent, ApiResponse } from './types';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 const codepipeline = new AWS.CodePipeline();
 

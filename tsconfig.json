@@ -17,10 +17,11 @@
     "inlineSources": true,
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
-    "esModuleInterop": true,
-    "outDir": "dist",
     "resolveJsonModule": true,
-    "rootDir": "."
+    "outDir": "./dist",
+    "rootDir": "./",
+    "esModuleInterop": true
   },
+  "include": ["*.ts", "**/*.ts"],
   "exclude": ["node_modules", "dist"]
 } 
