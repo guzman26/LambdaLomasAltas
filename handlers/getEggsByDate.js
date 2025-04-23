@@ -1,4 +1,4 @@
-const getEggs = require("./getEggs");
+const getBoxes = require("./getBoxes");
 const createApiResponse = require("../utils/response");
 
 /**
@@ -14,7 +14,7 @@ module.exports = async (event) => {
     }
 
     try {
-        const eggs = await getEggs({ fechaInicio, fechaFin });
+        const eggs = await getBoxes({ fechaInicio, fechaFin });
         return createApiResponse(200, eggs);
     } catch (error) {
         console.error("❌ Error retrieving eggs by date:", error);

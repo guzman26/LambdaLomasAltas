@@ -66,8 +66,8 @@ const databaseService = {
    * @param {string} location - Location to filter by
    * @returns {Promise<Array>} List of eggs in the specified location
    */
-  async getEggsByLocation(location) {
-    console.log(`📥 Querying eggs in location: ${location}`);
+  async getBoxesByLocation(location) {
+    console.log(`📥 Querying boxes in location: ${location}`);
 
     const params = {
       TableName: EGG_TABLE,

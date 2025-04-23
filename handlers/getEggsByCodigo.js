@@ -1,4 +1,4 @@
-const getEggs = require("./getEggs");
+const getBoxes = require("./getBoxes");
 const response = require("../utils/response");
 
 module.exports = async (event) => {
@@ -9,7 +9,7 @@ module.exports = async (event) => {
     }
 
     try {
-        const egg = await getEggs({ codigo });
+        const egg = await getBoxes({ codigo });
         return response(200, egg);
     } catch (error) {
         return response(500, "Error al obtener huevo por código", { error: error.message });

@@ -1,4 +1,4 @@
-const getEggs = require("./handlers/getEggs");
+const getEggs = require("./handlers/getBoxes");
 const getBodegaEggs = require("./handlers/getBodegaEggs");
 const getPackingEggs = require("./handlers/getPackingEggs");
 const getVentaEggs = require("./handlers/getVentaEggs");
@@ -6,7 +6,7 @@ const getEggByCodigo = require("./handlers/getEggsByCodigo");
 const getEggsByDate = require("./handlers/getEggsByDate");
 const registerEgg = require("./handlers/registerEgg");
 const getPallets = require("./handlers/getPallets");
-const { moveEgg } = require("./handlers/moveEgg");
+const { moveEgg } = require("./handlers/moveBox");
 const { movePallet } = require("./handlers/movePallet");
 const createApiResponse = require("./utils/response");
 const assignPallet = require("./handlers/assignPallet");
