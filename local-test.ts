@@ -7,9 +7,13 @@ process.env.HUEVOS_TABLE = 'Huevos';
 process.env.BOXES_TABLE_NAME = 'Boxes';
 process.env.ISSUES_TABLE = 'Issues';
 
-// Import the handler functions to test
-import { handler } from './index';
+// Import using require
+const { handler } = require('./index');
 import { LambdaEvent } from './types';
+import AWS from 'aws-sdk';
+import { APIGatewayProxyEvent } from 'aws-lambda';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Test cases for different endpoints
 const testCases: Record<string, LambdaEvent> = {

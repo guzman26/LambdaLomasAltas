@@ -1,16 +1,14 @@
 // Models
-import SystemConfig from './models/SystemConfig';
+const SystemConfig = require('./models/SystemConfig').default;
 
 // Controllers
-import palletsController from './controllers/pallets';
-import boxesController from './controllers/boxes';
-import adminController from './controllers/admin';
+const palletsController = require('./controllers/pallets').default;
+const boxesController = require('./controllers/boxes').default;
+const adminController = require('./controllers/admin').default;
 
 // Utils
-import createApiResponse from './utils/response';
-import AWS from 'aws-sdk';
-import { LambdaEvent, ApiResponse } from './types';
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+const createApiResponse = require('./utils/response').default;
+const AWS = require('aws-sdk');
 
 const codepipeline = new AWS.CodePipeline();
 
@@ -19,11 +17,11 @@ const LOCATIONS = SystemConfig.getLocations();
 const ITEM_TYPES = SystemConfig.getItemTypes();
 
 // Import the handlers with the new names
-import registerBox from './handlers/registerBox';
-import moveBox from './handlers/moveBox';
-import { getIssues } from './controllers/issues/read';
-import { updateIssueStatus } from './controllers/issues/update';
-import deleteIssue from './controllers/issues/delete';
+const registerBox = require('./handlers/registerBox').default;
+const moveBox = require('./handlers/moveBox').default;
+const { getIssues } = require('./controllers/issues/read');
+const { updateIssueStatus } = require('./controllers/issues/update');
+const deleteIssue = require('./controllers/issues/delete').default;
 
 // Missing function imports or declarations
 // These would need proper implementations or imports
@@ -102,7 +100,7 @@ const updateBoxDescription = async (code, description) => {
   return createApiResponse(501, "Not implemented yet");
 };
 
-  const assignPallet = async (code) => {
+const assignPallet = async (code) => {
   // Implementation needed
   return createApiResponse(501, "Not implemented yet");
 };
@@ -462,7 +460,7 @@ const optionsRoutes = {
   }
 };
 
-export const handler = async (event) => {
+const handler = async (event) => {
   // CodePipeline integration
   if (event['CodePipeline.job']) {
     const jobId = event['CodePipeline.job'].id;
@@ -590,4 +588,7 @@ export const handler = async (event) => {
     console.error("❌ Unhandled Error:", error);
     return createApiResponse(500, "Internal server error", { error: error.message });
   }
-}; 
+};
+
+// Export the handler using CommonJS syntax
+module.exports = { handler }; 

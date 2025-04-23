@@ -20,7 +20,8 @@
     "resolveJsonModule": true,
     "outDir": "./dist",
     "rootDir": "./",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "moduleResolution": "node"
   },
   "include": ["*.ts", "**/*.ts"],
   "exclude": ["node_modules", "dist"]
