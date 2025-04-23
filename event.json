@@ -1,5 +1,0 @@
-{
-  "httpMethod": "POST",
-  "path": "/movePallet",
-  "body": "{\"codigo\":\"123456789001\",\"ubicacion\":\"BODEGA\"}"
-} 

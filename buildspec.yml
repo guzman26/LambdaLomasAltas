@@ -10,11 +10,9 @@ phases:
   build:
     commands:
       - echo "Empaquetando código..."
-      - npm run build
-      - zip -r function.zip dist node_modules package.json package-lock.json # empaqueta la carpeta dist y dependencias
+      - zip -r function.zip . # empaqueta tu código
       - echo "Desplegando Lambda..."
       - aws lambda update-function-code --function-name RegistrarHuevos --zip-file fileb://function.zip --region us-east-2
-      - aws lambda update-function-configuration --function-name RegistrarHuevos --handler dist/index.handler --region us-east-2
 
 artifacts:
   files:

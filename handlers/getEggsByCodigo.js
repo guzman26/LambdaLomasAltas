@@ -1,4 +1,4 @@
-const getEggs = require("./getBoxes");
+const getEggs = require("./getEggs");
 const response = require("../utils/response");
 
 module.exports = async (event) => {

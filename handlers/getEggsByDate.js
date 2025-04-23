@@ -1,4 +1,4 @@
-const getEggs = require("./getBoxes");
+const getEggs = require("./getEggs");
 const createApiResponse = require("../utils/response");
 
 /**

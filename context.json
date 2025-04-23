@@ -1,6 +1,0 @@
-{
-  "functionName": "LambdaLomasAltas",
-  "timeout": 3,
-  "memoryLimitInMB": 128,
-  "awsRequestId": "test-request-id"
-} 
