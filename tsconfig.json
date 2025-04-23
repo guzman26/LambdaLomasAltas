@@ -23,6 +23,6 @@
     "esModuleInterop": true,
     "moduleResolution": "node"
   },
-  "include": ["*.ts", "**/*.ts"],
+  "include": ["handlers/**/*", "controllers/**/*", "models/**/*", "utils/**/*", "types/**/*", "index.ts"],
   "exclude": ["node_modules", "dist"]
 } 
