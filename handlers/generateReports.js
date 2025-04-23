@@ -6,7 +6,7 @@ const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const createApiResponse = require('../utils/response');
 
 // Tablas de la base de datos
-const EGG_TABLE = 'Huevos';
+const EGG_TABLE = 'Boxes';
 const PALLETS_TABLE = 'Pallets';
 const ISSUES_TABLE = 'Issues';
 const ADMIN_LOGS_TABLE = 'AdminLogs';

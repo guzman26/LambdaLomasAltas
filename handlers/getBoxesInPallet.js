@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 const createApiResponse = require('../utils/response');
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
-const TABLE_NAME = 'Huevos';
+const TABLE_NAME = 'Boxes';
 
 /**
  * Lambda handler to get full details of multiple boxes

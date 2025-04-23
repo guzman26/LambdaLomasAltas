@@ -1,7 +1,7 @@
 const AWS = require("aws-sdk");
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
-const EGG_TABLE = "Huevos";
+const EGG_TABLE = "Boxes";
 const PALLETS_TABLE = "Pallets";
 
 /**

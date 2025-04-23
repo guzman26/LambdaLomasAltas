@@ -130,7 +130,7 @@ const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) =>
       // Instead of rejecting, let's try to get the current state of the box
       try {
         const { Item: existingBox } = await dynamoDB.get({
-          TableName: "Huevos",
+          TableName: "Boxes",
           Key: { codigo: code }
         }).promise();
         
@@ -172,7 +172,7 @@ const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) =>
     // Step 3: Save the box to the DB
     try {
       await dynamoDB.put({
-        TableName: "Huevos",
+        TableName: "Boxes",
         Item: newBox
       }).promise();
       console.log("✅ Caja guardada en DynamoDB:", newBox.codigo);
@@ -210,7 +210,7 @@ const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) =>
           if (existingPallet.cajas && existingPallet.cajas.includes(newBox.codigo)) {
             // Si la caja ya está en el pallet, solo actualizar la referencia en la caja
             await dynamoDB.update({
-              TableName: "Huevos",
+              TableName: "Boxes",
               Key: { codigo: newBox.codigo },
               UpdateExpression: 'SET palletId = :palletId',
               ExpressionAttributeValues: {

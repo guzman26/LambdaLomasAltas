@@ -9,7 +9,7 @@ const createApiResponse = require('../utils/response');
 // Tabla de registros de operaciones administrativas
 const ADMIN_LOGS_TABLE = 'AdminLogs';
 const ISSUES_TABLE = 'Issues';
-const EGG_TABLE = 'Huevos';
+const EGG_TABLE = 'Boxes';
 const PALLETS_TABLE = 'Pallets';
 const CONFIG_TABLE = 'SystemConfig';
 

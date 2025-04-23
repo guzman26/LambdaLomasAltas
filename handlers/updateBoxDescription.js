@@ -14,7 +14,7 @@ const updateBoxDescription = async (codigo, newDescription) => {
 
   try {
     const params = {
-      TableName: "Huevos",
+      TableName: "Boxes",
       Key: { codigo },
       UpdateExpression: "SET descripcion = :desc",
       ExpressionAttributeValues: {
