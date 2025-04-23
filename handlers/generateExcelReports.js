@@ -13,7 +13,7 @@ const createApiResponse = require('../utils/response');
 const s3 = new AWS.S3();
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const REPORTS_BUCKET = process.env.REPORTS_BUCKET || 'huevos-app-reports';
-const EGG_TABLE = 'Huevos';
+const EGG_TABLE = 'Boxes';
 const PALLETS_TABLE = 'Pallets';
 
 /**

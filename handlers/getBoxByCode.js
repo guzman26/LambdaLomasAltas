@@ -1,7 +1,7 @@
 const AWS = require("aws-sdk");
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
-const EGGS_TABLE = "Huevos";
+const EGGS_TABLE = "Boxes";
 
 /**
  * Función que obtiene los detalles de una caja, dado su código.

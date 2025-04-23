@@ -2,7 +2,7 @@ const AWS = require("aws-sdk");
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 const PALLETS_TABLE = "Pallets";
-const EGGS_TABLE = "Huevos";
+const EGGS_TABLE = "Boxes";
 
 /**
  * Parses a date-caliber-format string into its components
