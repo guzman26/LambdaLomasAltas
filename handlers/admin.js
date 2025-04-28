@@ -4,7 +4,7 @@
 const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const { getSystemConfig, setSystemConfig } = require('./systemConfig');
-const createApiResponse = require('../utils/response');
+const createApiResponse = require('../../utils/response');
 
 // Tabla de registros de operaciones administrativas
 const ADMIN_LOGS_TABLE = 'AdminLogs';

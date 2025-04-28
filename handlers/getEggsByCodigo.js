@@ -1,5 +1,5 @@
 const getBoxes = require("./getBoxes");
-const response = require("../utils/response");
+const response = require("../../utils/response");
 
 module.exports = async (event) => {
     const { codigo } = event.queryStringParameters || {};

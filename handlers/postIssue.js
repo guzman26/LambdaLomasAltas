@@ -1,7 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
-const createApiResponse = require("../utils/response");
+const createApiResponse = require('../../utils/response');
 
 const ISSUES_TABLE = "Issues"; // Asegúrate de crear esta tabla en DynamoDB
 

@@ -8,7 +8,7 @@ const {
   generateInventoryReport, 
   generateIssuesReport 
 } = require('./generateReports');
-const createApiResponse = require('../utils/response');
+const createApiResponse = require('../../utils/response');
 
 const s3 = new AWS.S3();
 const dynamoDB = new AWS.DynamoDB.DocumentClient();

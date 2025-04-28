@@ -1,6 +1,6 @@
 const getBoxes = require("./getBoxes");
-const db = require("../utils/db");
-const response = require("../utils/response");
+const db = require("../../utils/db");
+const response = require("../../utils/response");
 
 module.exports = async () => {
     try {

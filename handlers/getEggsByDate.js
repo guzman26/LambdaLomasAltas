@@ -1,5 +1,5 @@
 const getBoxes = require("./getBoxes");
-const createApiResponse = require("../utils/response");
+const createApiResponse = require("../../utils/response");
 
 /**
  * Retrieves eggs filtered by date range
