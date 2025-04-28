@@ -1,5 +1,5 @@
-const databaseService = require("../../utils/db");
-const createApiResponse = require("../../utils/response");
+const databaseService = require("../utils/db");
+const createApiResponse = require("../utils/response");
 
 /**
  * Retrieves all eggs stored in the BODEGA location

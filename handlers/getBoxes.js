@@ -1,5 +1,5 @@
-const database = require("../../utils/db"); // Assuming you have a DB module
-const response = require("../../utils/response");
+const database = require("../utils/db"); // Assuming you have a DB module
+const response = require("../utils/response");
 
 const getEggs = async (filters) => {
     let query = {};

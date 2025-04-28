@@ -1,5 +1,5 @@
 const AWS = require("aws-sdk");
-const createApiResponse = require("../../utils/response");
+const createApiResponse = require("../utils/response");
 const addBoxToPallet = require("./addBoxToPallet");
 const assignPallet = require("./assignPallet");
 const createPallet = require("./createPallet");

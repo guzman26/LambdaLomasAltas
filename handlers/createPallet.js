@@ -2,7 +2,7 @@ const AWS = require("aws-sdk");
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 const PALLETS_TABLE = "Pallets";
-const createApiResponse = require("../../utils/response");
+const createApiResponse = require("../utils/response");
 
 /**
  * Creates a new pallet, appending a unique 3-digit number to the base code.

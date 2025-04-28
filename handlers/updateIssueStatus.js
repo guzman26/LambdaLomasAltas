@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
-const createApiResponse = require('../../utils/response');
+const createApiResponse = require('../utils/response');
 
 const ISSUES_TABLE = 'Issues';
 const ADMIN_LOGS_TABLE = 'AdminLogs';

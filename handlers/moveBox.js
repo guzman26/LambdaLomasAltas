@@ -1,5 +1,5 @@
-const databaseService = require("../../utils/db");
-const createApiResponse = require("../../utils/response");
+const databaseService = require("../utils/db");
+const createApiResponse = require("../utils/response");
 
 /**
  * Valida si un código tiene el formato correcto para una caja

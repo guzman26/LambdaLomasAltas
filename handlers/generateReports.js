@@ -3,7 +3,7 @@
  */
 const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
-const createApiResponse = require('../../utils/response');
+const createApiResponse = require('../utils/response');
 
 // Tablas de la base de datos
 const EGG_TABLE = 'Boxes';
