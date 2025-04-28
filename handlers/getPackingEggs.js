@@ -1,4 +1,4 @@
-const getBoxes = require("./getBoxes");
+const getBoxes = require("../egg/getBoxes");
 const db = require("../../utils/db");
 const response = require("../../utils/response");
 
