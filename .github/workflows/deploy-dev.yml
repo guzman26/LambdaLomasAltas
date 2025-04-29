@@ -1,8 +1,8 @@
-name: Deploy to Production Lambda
+name: Deploy to Dev Lambda
 
 on:
   push:
-    branches: [master, main]
+    branches: [dev]
 
 permissions:
   id-token: write
@@ -24,19 +24,19 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Set environment variable for production
-        run: echo "STAGE=main" >> $GITHUB_ENV
-          
-      - name: Create .env file for production environment
+      - name: Set environment variable for dev
+        run: echo "STAGE=dev" >> $GITHUB_ENV
+
+      - name: Create .env file for dev environment
         run: |
           echo "# Archivo de entorno generado automáticamente por GitHub Actions" > .env
-          echo "# Despliegue de rama main/master a lambda de producción" >> .env
+          echo "# Despliegue de rama dev a lambda-dev" >> .env
           echo "# Fecha de generación: $(date)" >> .env
           echo "" >> .env
-          echo "STAGE=main" >> .env
-          echo "NODE_ENV=production" >> .env
+          echo "STAGE=dev" >> .env
+          echo "NODE_ENV=development" >> .env
           echo "ENV_SOURCE=github_actions" >> .env
-          echo "DEPLOYMENT_BRANCH=${GITHUB_REF##*/}" >> .env
+          echo "DEPLOYMENT_BRANCH=dev" >> .env
           echo "DEPLOYMENT_TIMESTAMP=$(date +%s)" >> .env
           
           echo "Contenido del archivo .env:"
@@ -46,19 +46,19 @@ jobs:
         run: |
           zip -r lambda.zip .
 
-      - name: Deploy to Production Lambda
+      - name: Deploy to Dev Lambda
         run: |
           aws lambda update-function-code \
-            --function-name RegistrarHuevos \
+            --function-name RegistrarHuevos-dev \
             --zip-file fileb://lambda.zip
 
       - name: Wait for Lambda update to finish
         run: |
           aws lambda wait function-updated \
-          --function-name RegistrarHuevos
-
+          --function-name RegistrarHuevos-dev
+          
       - name: Update Lambda environment variables
         run: |
           aws lambda update-function-configuration \
-            --function-name RegistrarHuevos \
-            --environment "Variables={STAGE=main,NODE_ENV=production,DEPLOYMENT_BRANCH=${GITHUB_REF##*/},DEPLOYMENT_TIMESTAMP=$(date +%s)}"
+            --function-name RegistrarHuevos-dev \
+            --environment "Variables={STAGE=dev,NODE_ENV=development,DEPLOYMENT_BRANCH=dev,DEPLOYMENT_TIMESTAMP=$(date +%s)}" 

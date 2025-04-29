@@ -3,7 +3,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "create-tables:dev": "STAGE=dev node scripts/create-tables.js",
+    "create-tables:prod": "STAGE=main node scripts/create-tables.js",
+    "create-tables:local": "STAGE=dev LOCAL_DEVELOPMENT=true node scripts/create-tables.js",
+    "env:dev": "echo 'STAGE=dev\nNODE_ENV=development' > .env && cat .env",
+    "env:prod": "echo 'STAGE=main\nNODE_ENV=production' > .env && cat .env",
+    "check-env": "node scripts/check-environment.js"
   },
   "keywords": [],
   "author": "",
@@ -11,6 +17,7 @@
   "description": "",
   "dependencies": {
     "aws-sdk": "^2.1692.0",
+    "dotenv": "^16.3.1",
     "exceljs": "^4.3.0"
   }
 }
