@@ -2,15 +2,25 @@
   "name": "lambda-function",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npx serverless offline",
+    "create-table": "node scripts/create-table.js",
+    "deploy": "npx serverless deploy",
+    "test:local": "node scripts/test-local.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.798.0",
     "aws-sdk": "^2.1692.0",
-    "exceljs": "^4.3.0"
+    "exceljs": "^4.3.0",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "serverless": "^3.38.0",
+    "serverless-offline": "^12.0.4"
   }
 }
