@@ -51,7 +51,12 @@ jobs:
           aws lambda update-function-code \
             --function-name RegistrarHuevos-dev \
             --zip-file fileb://lambda.zip
-            
+
+      - name: Wait for Lambda update to finish
+        run: |
+          aws lambda wait function-updated \
+          --function-name RegistrarHuevos-dev
+          
       - name: Update Lambda environment variables
         run: |
           aws lambda update-function-configuration \
