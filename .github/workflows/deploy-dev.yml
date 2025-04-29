@@ -1,8 +1,8 @@
-name: Deploy to Production Lambda
+name: Deploy to Dev Lambda
 
 on:
   push:
-    branches: [master, main]
+    branches: [dev]
 
 permissions:
   id-token: write
@@ -24,15 +24,15 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Set environment variable for production
-        run: echo "STAGE=main" >> $GITHUB_ENV
-          
+      - name: Set environment variable for dev
+        run: echo "STAGE=dev" >> $GITHUB_ENV
+
       - name: Zip application
         run: |
           zip -r lambda.zip .
 
-      - name: Deploy to Production Lambda
+      - name: Deploy to Dev Lambda
         run: |
           aws lambda update-function-code \
-            --function-name RegistrarHuevos \
-            --zip-file fileb://lambda.zip
+            --function-name RegistrarHuevos-dev \
+            --zip-file fileb://lambda.zip 
