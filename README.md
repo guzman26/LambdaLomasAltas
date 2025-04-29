@@ -20,10 +20,33 @@ Ver [documentación de modelos](models/README.md) para más detalles.
 
 ## Configuración de Entorno
 
-El entorno se detecta automáticamente mediante la variable de entorno `STAGE`:
+El entorno se detecta automáticamente mediante la siguiente lógica (en orden de prioridad):
 
-- `STAGE=dev` → Tablas con sufijo `-dev`
-- `STAGE=main` (o cualquier otro valor) → Tablas sin sufijo
+1. Variable de entorno `STAGE` (si está definida)
+2. En entorno de producción (`NODE_ENV=production`), se usa el entorno principal
+3. Detección de rama en GitHub Actions
+4. Valor predeterminado: `dev`
+
+### Archivos de Entorno
+
+El sistema soporta configuración mediante:
+
+- **Variables de entorno**: Configuradas directamente en el sistema
+- **Archivo `.env`**: Para entorno de desarrollo local
+- **Configuración de Lambda**: En AWS, configurada por GitHub Actions
+
+### Scripts para Gestión de Entorno
+
+```bash
+# Crear archivo .env para entorno de desarrollo
+npm run env:dev
+
+# Crear archivo .env para entorno de producción
+npm run env:prod
+
+# Verificar el entorno actual y la configuración
+npm run check-env
+```
 
 ## Despliegue
 
@@ -36,6 +59,11 @@ El sistema se despliega automáticamente mediante GitHub Actions:
 
 - [deploy.yml](.github/workflows/deploy.yml): Despliegue a producción
 - [deploy-dev.yml](.github/workflows/deploy-dev.yml): Despliegue a desarrollo
+
+Los workflows realizan automáticamente:
+1. Creación de archivo `.env` apropiado para el entorno
+2. Configuración de variables de entorno en la Lambda
+3. Empaquetado y despliegue del código
 
 ## Creación de Tablas
 

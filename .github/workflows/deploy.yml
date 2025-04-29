@@ -27,6 +27,21 @@ jobs:
       - name: Set environment variable for production
         run: echo "STAGE=main" >> $GITHUB_ENV
           
+      - name: Create .env file for production environment
+        run: |
+          echo "# Archivo de entorno generado automáticamente por GitHub Actions" > .env
+          echo "# Despliegue de rama main/master a lambda de producción" >> .env
+          echo "# Fecha de generación: $(date)" >> .env
+          echo "" >> .env
+          echo "STAGE=main" >> .env
+          echo "NODE_ENV=production" >> .env
+          echo "ENV_SOURCE=github_actions" >> .env
+          echo "DEPLOYMENT_BRANCH=${GITHUB_REF##*/}" >> .env
+          echo "DEPLOYMENT_TIMESTAMP=$(date +%s)" >> .env
+          
+          echo "Contenido del archivo .env:"
+          cat .env
+
       - name: Zip application
         run: |
           zip -r lambda.zip .
@@ -36,3 +51,9 @@ jobs:
           aws lambda update-function-code \
             --function-name RegistrarHuevos \
             --zip-file fileb://lambda.zip
+            
+      - name: Update Lambda environment variables
+        run: |
+          aws lambda update-function-configuration \
+            --function-name RegistrarHuevos \
+            --environment "Variables={STAGE=main,NODE_ENV=production,DEPLOYMENT_BRANCH=${GITHUB_REF##*/},DEPLOYMENT_TIMESTAMP=$(date +%s)}"
