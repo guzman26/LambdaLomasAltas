@@ -21,20 +21,19 @@ function parsePalletCode(code) {
 
 /** Devuelve el siguiente sufijo ### libre para un baseCode dado */
 async function nextSuffix(baseCode) {
-  // `codigo` es la PK → podemos usar Query con begins_with
-  const res = await dynamoDB.query({
-    TableName: tableName,
-    KeyConditionExpression: 'begins_with(codigo, :base)',
-    ExpressionAttributeValues: { ':base': baseCode },
-    ProjectionExpression: 'codigo'
-  }).promise();
-
-  const max = res.Items
-    .map(i => Number(i.codigo.slice(9)))
-    .reduce((a, b) => (b > a ? b : a), 0);
-
-  return String(max + 1).padStart(3, '0');
-}
+    const res = await dynamoDB.query({
+      TableName: tableName,
+      IndexName: 'baseCode-suffix-GSI',
+      KeyConditionExpression: 'baseCode = :b',
+      ExpressionAttributeValues: { ':b': baseCode },
+      ProjectionExpression: 'suffix',
+      ScanIndexForward: false,   // orden DESC
+      Limit: 1
+    }).promise();
+  
+    const max = res.Count === 0 ? 0 : Number(res.Items[0].suffix);
+    return String(max + 1).padStart(3, '0');
+  }
 
 /** Crea un pallet y lo devuelve  */
 async function createPallet(baseCode, ubicacion = 'PACKING') {
@@ -48,6 +47,8 @@ async function createPallet(baseCode, ubicacion = 'PACKING') {
 
   const pallet = {
     codigo,
+    baseCode,
+    suffix,
     fechaCalibreFormato: `${parts.dayOfWeek}${parts.weekOfYear}${parts.year}${parts.shift}${parts.caliber}${parts.format}`,
     estado        : 'open',
     cajas         : [],
