@@ -56,6 +56,8 @@ async function createPallet(baseCode, ubicacion = 'PACKING') {
     ubicacion
   };
 
+  console.log("Pallet a crear:", tableName, pallet);
+
   await dynamoDB.put({ TableName: tableName, Item: pallet }).promise();
   return pallet;
 }
