@@ -13,7 +13,7 @@ const assignPallet = require("./handlers/assignPallet");
 const addBoxToPallet = require("./handlers/addBoxToPallet");
 const { setSystemConfig, getSystemConfig } = require("./handlers/systemConfig");
 const closePallet = require("./handlers/closePallet");
-const createPallet = require("./handlers/createPallet");
+const createPalletHandler = require("./handlers/createPallet");
 const updateBoxDescription = require("./handlers/updateBoxDescription");
 const getActivePallets = require("./handlers/getActivePallets");
 const getClosedPallets = require("./handlers/getClosedPallets");
@@ -188,7 +188,7 @@ const postRoutes = {
   "/createPallet": createHandler(async (event) => {
     const { codigo } = helpers.parseBody(event);
     helpers.validateRequired({ codigo }, ['codigo']);
-    const result = await createPallet(codigo);
+    const result = await createPalletHandler(codigo);
     return createApiResponse(200, "Pallet created successfully", result);
   }),
 
