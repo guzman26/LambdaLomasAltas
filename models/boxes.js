@@ -171,18 +171,17 @@ async function getBoxesByLocation(ubicacion) {
  * @returns {Promise<Array<Object>>} Lista de boxes en ese pallet
  */
 async function getBoxesByPallet(palletId) {
-  // Esto requerirá un GSI o un scan con filtro
-  // Por ahora implementamos con scan + filtro por simplicidad
-  const params = {
-    TableName: tableName,
-    FilterExpression: 'palletId = :palletId',
-    ExpressionAttributeValues: {
-      ':palletId': palletId
-    }
-  };
 
   try {
-    const result = await dynamoDB.scan(params).promise();
+    const params = {
+      TableName: tableName,
+      IndexName: 'palletId-index',
+      KeyConditionExpression: 'palletId = :palletId',
+      ExpressionAttributeValues: {
+        ':palletId': palletId
+      }
+    }
+    const result = await dynamoDB.query(params).promise();
     console.log(`Boxes encontrados en pallet ${palletId}: ${result.Items.length}`);
     return result.Items;
   } catch (error) {
@@ -216,29 +215,21 @@ async function assignBoxToPallet(codigo, palletId) {
  * @returns {Promise<Object>} Conteo de boxes por ubicación
  */
 async function countBoxesByLocation() {
-  // Esta función es menos eficiente ya que requiere escanear toda la tabla
-  // En una implementación real se podrían usar métricas o contadores
-  const params = {
-    TableName: tableName
-  };
-
-  try {
-    const result = await dynamoDB.scan(params).promise();
-    
-    // Agrupar por ubicación
-    const counts = result.Items.reduce((acc, box) => {
-      const ubicacion = box.ubicacion || 'DESCONOCIDO';
-      acc[ubicacion] = (acc[ubicacion] || 0) + 1;
-      return acc;
-    }, {});
-    
-    console.log('Conteo de boxes por ubicación:', counts);
+    const ubicaciones = ['PACKING', 'BODEGA', 'VENTA'];
+    const counts = {};
+  
+    for (const u of ubicaciones) {
+      const res = await dynamoDB.query({
+        TableName: tableName,
+        IndexName: 'ubicacion-index',
+        KeyConditionExpression: 'ubicacion = :u',
+        ExpressionAttributeValues: { ':u': u },
+        Select: 'COUNT'
+      }).promise();
+      counts[u] = res.Count;       // res.Count devuelve el total sin traer Items
+    }
     return counts;
-  } catch (error) {
-    console.error('Error al contar boxes por ubicación:', error);
-    throw new Error(`Error al contar boxes: ${error.message}`);
   }
-}
 
 /**
  * Verificar si un código de box existe

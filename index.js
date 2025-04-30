@@ -1,4 +1,4 @@
-const getEggs = require("./handlers/getBoxes");
+const getBoxes = require("./handlers/getBoxes");
 const getBodegaEggs = require("./handlers/getBodegaEggs");
 const getPackingEggs = require("./handlers/getPackingEggs");
 const getVentaEggs = require("./handlers/getVentaEggs");
@@ -91,7 +91,7 @@ const getRoutes = {
   "/getPackingData": getPackingEggs,
   "/getVentaData": getVentaEggs,
   "/getEggsByDate": getEggsByDate,
-  "/production": getEggs,
+  "/production": getBoxes,
   "/getPallets": getPallets,
   "/getActivePallets": createHandler(async () => {
     const result = await getActivePallets();
