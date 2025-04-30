@@ -3,6 +3,15 @@ const createApiResponse = require("../utils/response");
 const addBoxToPallet = require("./addBoxToPallet");
 const assignPallet = require("./assignPallet");
 const createPallet = require("./createPallet");
+const { parseBoxCode } = require("../utils/parseBoxCode");
+const { parsePalletCode } = require("../utils/parsePalletCode");
+const {
+  createBox,
+  getBoxByCode,
+  boxExists,
+  assignBoxToPallet,
+} = require("../models/boxes");
+
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
@@ -22,66 +31,6 @@ const cleanupCache = () => {
 
 // Run cleanup every minute
 setInterval(cleanupCache, 60000);
-
-/**
- * Parses a box code into its components
- * @param {string} code - 15-digit box code
- * @returns {object} Parsed code components
- * @throws {Error} If code format is invalid
- */
-const parseBoxCode = (code) => {
-    if (!code || typeof code !== 'string') {
-        throw new Error(`Código inválido: formato incorrecto`);
-    }
-    
-    if (code.length !== 15) {
-        throw new Error(`Código inválido: ${code} (longitud incorrecta, debe tener 15 dígitos)`);
-    }
-
-    // Validar que el código contiene solo dígitos
-    if (!/^\d+$/.test(code)) {
-        throw new Error(`Código inválido: ${code} (debe contener solo dígitos)`);
-    }
-
-    return {
-        dia_semana: code.slice(0, 1),
-        semana: code.slice(1, 3),
-        año: `20${code.slice(3, 5)}`,
-        operario: code.slice(5, 7),
-        empacadora: code.slice(7, 8),
-        horario_proceso: code.slice(8, 9) === "1" ? "Mañana" : "Tarde",
-        calibre: code.slice(9, 11),
-        formato_caja: code.slice(11, 12),
-        contador: code.slice(12, 15),
-    };
-};
-
-const parsePalletCode = (code) => {
-    if (!code || typeof code !== 'string') {
-        throw new Error(`Código de pallet inválido: formato incorrecto`);
-    }
-    
-    if (code.length !== 12) {
-        console.log(code.length)
-        throw new Error(`Código de pallet inválido: ${code} (longitud incorrecta, debe tener 12 dígitos)`);
-    }
-
-    // Validar que el código contiene solo dígitos
-    if (!/^\d+$/.test(code)) {
-        throw new Error(`Código de pallet inválido: ${code} (debe contener solo dígitos)`);
-    }
-
-    return {
-        dia_semana: code.slice(0, 1),
-        semana: code.slice(1, 3),
-        año: `20${code.slice(3, 5)}`,
-        horario_proceso: code.slice(5, 6) === "1" ? "Mañana" : "Tarde",
-        calibre: code.slice(6, 8),
-        formato_caja: code.slice(8, 9),
-        contador: code.slice(9, 12),
-    };
-};
-
 /**
  * Finds a pallet in 'active' state that matches specific box attributes
  */
@@ -126,22 +75,7 @@ const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) =>
     
     if (lastProcessed && (now - lastProcessed) < PROCESSING_COOLDOWN) {
       console.log(`⚠️ Duplicate request for box ${code} detected - processed ${now - lastProcessed}ms ago`);
-      
-      // Instead of rejecting, let's try to get the current state of the box
-      try {
-        const { Item: existingBox } = await dynamoDB.get({
-          TableName: "Boxes",
-          Key: { codigo: code }
-        }).promise();
-        
-        if (existingBox) {
-          console.log("📦 Box already exists, returning current state:", existingBox);
-          return createApiResponse(200, `✅ Caja ya está registrada en el sistema`, existingBox);
-        }
-      } catch (error) {
-        console.error("Error checking for existing box:", error);
-        // Continue with normal flow if we couldn't check
-      }
+
     }
     
     // Record this processing attempt
@@ -171,11 +105,7 @@ const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) =>
   
     // Step 3: Save the box to the DB
     try {
-      await dynamoDB.put({
-        TableName: "Boxes",
-        Item: newBox
-      }).promise();
-      console.log("✅ Caja guardada en DynamoDB:", newBox.codigo);
+      await createBox(newBox);
     } catch (saveError) {
       console.error("❌ Error saving box:", saveError.message);
       return createApiResponse(500, `❌ Error guardando caja: ${saveError.message}`);
