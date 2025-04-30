@@ -2,12 +2,8 @@
 const createApiResponse = require('../utils/response');
 const { createIssue }  = require('../models/issues');
 
-module.exports = async (event) => {
+const postIssue = async (descripcion) => {
   try {
-    const body = JSON.parse(event.body || '{}');
-    const descripcion = body.descripcion;
-
-    // delega la validación al modelo
     const issue = await createIssue(descripcion);
 
     return createApiResponse(200, {
@@ -21,3 +17,5 @@ module.exports = async (event) => {
     return createApiResponse(status, `❌ Error al reportar issue: ${err.message}`);
   }
 };
+
+module.exports = postIssue;
