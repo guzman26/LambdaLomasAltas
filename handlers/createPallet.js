@@ -2,15 +2,14 @@
 const createApiResponse      = require('../utils/response');
 const { createPallet }       = require('../models/pallets');
 
-const createPalletHandler = async (event) => {
+const createPalletHandler = async (codigo) => {
   try {
-    const { baseCode, ubicacion } = JSON.parse(event.body || '{}');
 
-    if (!baseCode) {
+    if (!codigo) {
       return createApiResponse(400, '⚠️ Falta baseCode (9 dígitos)');
     }
 
-    const pallet = await createPallet(baseCode, ubicacion || 'PACKING');
+    const pallet = await createPallet(codigo);
     return createApiResponse(201, '✅ Pallet creado', pallet);
 
   } catch (err) {
