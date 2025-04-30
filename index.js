@@ -211,6 +211,7 @@ const postRoutes = {
   }),
   "/postIssue": createHandler(async (event) => {
     const { descripcion } = helpers.parseBody(event);
+    console.log("Descripción recibida:", descripcion);
     return await postIssue(descripcion);
   }),
   
