@@ -159,19 +159,36 @@ async function closePallet(codigo) {
 }
 
 async function getOpenPallets() {
-    const params = {
-      TableName : tableName,
-      IndexName : 'estado-fechaCreacion-GSI',   // ya existe
-      KeyConditionExpression: '#e = :open',
-      ExpressionAttributeNames : { '#e': 'estado' },
-      ExpressionAttributeValues: { ':open': 'open' },
-      ScanIndexForward: false                   // más recientes primero
-    };
-  
-    const res = await dynamoDB.query(params).promise();
-    return res.Items;
+  const params = {
+    TableName: tableName,
+    IndexName: 'estado-fechaCreacion-GSI', // ya existe
+    KeyConditionExpression: '#e = :open',
+    ExpressionAttributeNames: { '#e': 'estado' },
+    ExpressionAttributeValues: { ':open': 'open' },
+    ScanIndexForward: false, // más recientes primero
+  };
+
+  const res = await dynamoDB.query(params).promise();
+  return res.Items;
+}
+
+async function getPalletByCode(codigo) {
+  const res = await dynamoDB
+    .get({
+      TableName: tableName,
+      Key: { codigo },
+    })
+    .promise();
+  return res.Item || null;
+}
+
+async function getOrCreatePallet(codigo, ubicacion = 'PACKING') {
+  let pallet = await getPalletByCode(codigo);
+  if (!pallet) {
+    pallet = await createPallet(codigo, ubicacion); // reutiliza tu función existente
   }
-  
+  return pallet;
+}
 
 module.exports = {
   dynamoDB,
@@ -182,4 +199,6 @@ module.exports = {
   togglePalletStatus,
   closePallet,
   getOpenPallets,
+  getOrCreatePallet,
+  getPalletByCode,
 };

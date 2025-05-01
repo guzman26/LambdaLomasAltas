@@ -9,8 +9,8 @@ const getPalletsHandler = require('./handlers/getPallets');
 const { moveEgg } = require('./handlers/moveBox');
 const { movePallet } = require('./handlers/movePallet');
 const createApiResponse = require('./utils/response');
-const assignPallet = require('./handlers/assignPallet');
-const addBoxToPallet = require('./handlers/addBoxToPallet');
+const assignPalletHandler = require('./handlers/assignPallet');
+const addBoxToPalletHandler = require('./handlers/addBoxToPallet');
 const { setSystemConfig, getSystemConfig } = require('./handlers/systemConfig');
 const closePalletHandler = require('./handlers/closePallet');
 const createPalletHandler = require('./handlers/createPallet');
@@ -157,7 +157,7 @@ const postRoutes = {
   '/AssignPallet': createHandler(async event => {
     const { codigo } = helpers.parseBody(event);
     helpers.validateRequired({ codigo }, ['codigo']);
-    await assignPallet(codigo);
+    await assignPalletHandler(codigo);
     await setSystemConfig('ACTIVE_PALLET_CODE', codigo);
     return createApiResponse(200, 'Pallet assigned successfully', { palletCode: codigo });
   }),
