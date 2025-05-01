@@ -1,5 +1,5 @@
 const { getOpenPallets } = require('../models/pallets');
-const createApiResponse  = require('../utils/response');
+const createApiResponse = require('../utils/response');
 
 const getActivePalletsHandler = async () => {
   try {
