@@ -1,0 +1,21 @@
+# Dependencias
+node_modules
+package-lock.json
+
+# Archivos de construcción
+dist
+build
+.serverless
+.build
+lambda.zip
+
+# Archivos de entorno y configuración
+.env
+.env.*
+.dynamodb
+
+# Archivos y carpetas generados
+coverage
+*.log
+*.snap
+.DS_Store 

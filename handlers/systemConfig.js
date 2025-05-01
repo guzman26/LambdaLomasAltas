@@ -14,10 +14,12 @@ const CONFIG_TABLE = 'SystemConfig';
  */
 async function setSystemConfig(configKey, configValue) {
   try {
-    await dynamoDB.put({
-      TableName: CONFIG_TABLE,
-      Item: { configKey, configValue }
-    }).promise();
+    await dynamoDB
+      .put({
+        TableName: CONFIG_TABLE,
+        Item: { configKey, configValue },
+      })
+      .promise();
     console.log(`✅ Configuration saved: ${configKey}`);
   } catch (error) {
     console.error(`❌ Error saving configuration ${configKey}:`, error);
@@ -32,10 +34,12 @@ async function setSystemConfig(configKey, configValue) {
  */
 async function getSystemConfig(configKey) {
   try {
-    const result = await dynamoDB.get({
-      TableName: CONFIG_TABLE,
-      Key: { configKey }
-    }).promise();
+    const result = await dynamoDB
+      .get({
+        TableName: CONFIG_TABLE,
+        Key: { configKey },
+      })
+      .promise();
 
     return result.Item ? result.Item.configValue : null;
   } catch (error) {
@@ -46,5 +50,5 @@ async function getSystemConfig(configKey) {
 
 module.exports = {
   setSystemConfig,
-  getSystemConfig
+  getSystemConfig,
 };

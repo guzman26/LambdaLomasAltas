@@ -23,13 +23,13 @@ async function updateIssueStatus(issueId, status, resolution = null) {
       Key: { IssueNumber: issueId },
       UpdateExpression: 'SET #estado = :status, lastUpdated = :timestamp',
       ExpressionAttributeNames: {
-        '#estado': 'estado'
+        '#estado': 'estado',
       },
       ExpressionAttributeValues: {
         ':status': status,
-        ':timestamp': new Date().toISOString()
+        ':timestamp': new Date().toISOString(),
       },
-      ReturnValues: 'ALL_NEW'
+      ReturnValues: 'ALL_NEW',
     };
 
     // Si hay comentario de resolución, lo añadimos
@@ -51,10 +51,10 @@ async function updateIssueStatus(issueId, status, resolution = null) {
  * @param {Object} event - API Gateway event
  * @returns {Promise<Object>} API response
  */
-exports.handler = async (event) => {
+exports.handler = async event => {
   try {
     console.log('Received event:', JSON.stringify(event, null, 2));
-    
+
     // Get issueId from path parameters or body
     let issueId;
     if (event.pathParameters && event.pathParameters.issueId) {
@@ -68,17 +68,15 @@ exports.handler = async (event) => {
         issueId = pathParts[issueIdIndex];
       }
     }
-    
+
     // Parse the request body
-    const requestBody = typeof event.body === 'string'
-      ? JSON.parse(event.body)
-      : event.body || {};
+    const requestBody = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {};
 
     // Extract status and resolution from body
     const { status, resolution } = requestBody;
 
     console.log(`Updating issue ${issueId} with status: ${status}`);
-    
+
     // Validate required fields
     if (!issueId || !status) {
       return createApiResponse(400, 'Faltan campos requeridos: issueId y status son obligatorios');
@@ -87,7 +85,11 @@ exports.handler = async (event) => {
     // Update the issue
     const updatedIssue = await updateIssueStatus(issueId, status, resolution);
 
-    return createApiResponse(200, 'Estado de la incidencia actualizado correctamente', updatedIssue);
+    return createApiResponse(
+      200,
+      'Estado de la incidencia actualizado correctamente',
+      updatedIssue
+    );
   } catch (error) {
     console.error('❌ Error en Lambda handler para actualizar estado de incidencia:', error);
     return createApiResponse(
@@ -98,4 +100,4 @@ exports.handler = async (event) => {
 };
 
 // Export for testing and reuse
-module.exports = updateIssueStatus; 
+module.exports = updateIssueStatus;

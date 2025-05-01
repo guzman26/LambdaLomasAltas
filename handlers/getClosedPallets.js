@@ -1,5 +1,5 @@
-const AWS = require("aws-sdk");
-const createApiResponse = require("../utils/response");
+const AWS = require('aws-sdk');
+const createApiResponse = require('../utils/response');
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
@@ -10,7 +10,7 @@ const dynamoDB = new AWS.DynamoDB.DocumentClient();
  * @param {string} ubicacionValue - e.g. "PACKING"
  * @returns {Promise<object>} API-style response
  */
-const getClosedPalletsByUbicacion = async (ubicacionValue) => {
+const getClosedPalletsByUbicacion = async ubicacionValue => {
   // Optionally uppercase or sanitize the input
   const location = ubicacionValue.toUpperCase();
 
@@ -18,15 +18,15 @@ const getClosedPalletsByUbicacion = async (ubicacionValue) => {
     // We keep #ubicacion as a field name reference in Dynamo,
     // but the actual value is dynamic
     const params = {
-      TableName: "Pallets",
-      FilterExpression: "#estado = :closed AND #ubicacion = :loc",
+      TableName: 'Pallets',
+      FilterExpression: '#estado = :closed AND #ubicacion = :loc',
       ExpressionAttributeNames: {
-        "#estado": "estado",
-        "#ubicacion": "ubicacion", // The table attribute name
+        '#estado': 'estado',
+        '#ubicacion': 'ubicacion', // The table attribute name
       },
       ExpressionAttributeValues: {
-        ":closed": "closed",
-        ":loc": location,
+        ':closed': 'closed',
+        ':loc': location,
       },
     };
 

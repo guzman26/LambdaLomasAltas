@@ -38,7 +38,7 @@ jobs:
           echo "ENV_SOURCE=github_actions" >> .env
           echo "DEPLOYMENT_BRANCH=dev" >> .env
           echo "DEPLOYMENT_TIMESTAMP=$(date +%s)" >> .env
-          
+
           echo "Contenido del archivo .env:"
           cat .env
 
@@ -56,9 +56,9 @@ jobs:
         run: |
           aws lambda wait function-updated \
           --function-name RegistrarHuevos-dev
-          
+
       - name: Update Lambda environment variables
         run: |
           aws lambda update-function-configuration \
             --function-name RegistrarHuevos-dev \
-            --environment "Variables={STAGE=dev,NODE_ENV=development,DEPLOYMENT_BRANCH=dev,DEPLOYMENT_TIMESTAMP=$(date +%s)}" 
+            --environment "Variables={STAGE=dev,NODE_ENV=development,DEPLOYMENT_BRANCH=dev,DEPLOYMENT_TIMESTAMP=$(date +%s)}"

@@ -1,8 +1,8 @@
-const AWS = require("aws-sdk");
+const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
-const PALLETS_TABLE = "Pallets";
-const EGGS_TABLE    = "Boxes";
+const PALLETS_TABLE = 'Pallets';
+const EGGS_TABLE = 'Boxes';
 
 /**
  * Elimina una caja de un pallet y actualiza la caja quitándole el palletId.
@@ -35,31 +35,36 @@ async function removeBoxFromPallet(palletId, boxCode) {
   }
 
   // 3. Actualizar el pallet: remover la caja y decrementar contador
-  const { Attributes: updatedPallet } = await dynamoDB.update({
-    TableName: PALLETS_TABLE,
-    Key: { codigo: palletId },
-    UpdateExpression: [
-      "SET cajas = :newList",
-      "   , cantidadCajas = cantidadCajas - :dec"
-    ].join(" "),
-    ConditionExpression: "contains(cajas, :box)",
-    ExpressionAttributeValues: {
-      ':newList': pallet.cajas.filter(c => c !== boxCode),
-      ':dec': 1,
-      ':box': boxCode,
-    },
-    ReturnValues: 'ALL_NEW',
-  }).promise();
+  const { Attributes: updatedPallet } = await dynamoDB
+    .update({
+      TableName: PALLETS_TABLE,
+      Key: { codigo: palletId },
+      UpdateExpression: ['SET cajas = :newList', '   , cantidadCajas = cantidadCajas - :dec'].join(
+        ' '
+      ),
+      ConditionExpression: 'contains(cajas, :box)',
+      ExpressionAttributeValues: {
+        ':newList': pallet.cajas.filter(c => c !== boxCode),
+        ':dec': 1,
+        ':box': boxCode,
+      },
+      ReturnValues: 'ALL_NEW',
+    })
+    .promise();
 
   // 4. Actualizar la caja: eliminar su atributo palletId
-  const { Attributes: updatedBox } = await dynamoDB.update({
-    TableName: EGGS_TABLE,
-    Key: { codigo: boxCode },
-    UpdateExpression: 'REMOVE palletId',
-    ReturnValues: 'ALL_NEW',
-  }).promise();
+  const { Attributes: updatedBox } = await dynamoDB
+    .update({
+      TableName: EGGS_TABLE,
+      Key: { codigo: boxCode },
+      UpdateExpression: 'REMOVE palletId',
+      ReturnValues: 'ALL_NEW',
+    })
+    .promise();
 
-  console.log(`✅ Caja "${boxCode}" removida de pallet "${palletId}" y desvinculada correctamente.`);
+  console.log(
+    `✅ Caja "${boxCode}" removida de pallet "${palletId}" y desvinculada correctamente.`
+  );
 
   return { updatedPallet, updatedBox };
 }

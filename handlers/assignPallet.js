@@ -1,8 +1,8 @@
-const AWS = require("aws-sdk");
+const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
-const createPallet = require("./createPallet");
+const createPallet = require('./createPallet');
 
-const PALLETS_TABLE = "Pallets";
+const PALLETS_TABLE = 'Pallets';
 
 /**
  * Parses a pallet code string into its components
@@ -21,15 +21,15 @@ function parsePalletCode(code) {
   if (!code || code.length < 9) {
     throw new Error(`Invalid pallet code: "${code}"`);
   }
-  
-  return { 
+
+  return {
     dayOfWeek: code.substring(0, 1),
     weekOfYear: code.substring(1, 3),
     year: code.substring(3, 5),
     shift: code.substring(5, 6),
     caliber: code.substring(6, 8),
     format: code.substring(8, 9),
-    palletNumber: code.substring(9)
+    palletNumber: code.substring(9),
   };
 }
 
@@ -39,7 +39,7 @@ function parsePalletCode(code) {
  * @returns {Promise<object>} The pallet object (existing or newly created)
  * @throws {Error} If pallet retrieval or creation fails
  */
-async function assignPallet(palletCode, ubicacion = "PACKING") {
+async function assignPallet(palletCode, ubicacion = 'PACKING') {
   console.log(`🔍 Checking for pallet with code: "${palletCode}"`);
 
   // Validate palletCode is a string
@@ -50,7 +50,7 @@ async function assignPallet(palletCode, ubicacion = "PACKING") {
   try {
     // Parse the pallet code
     const { dayOfWeek, weekOfYear, year, shift, caliber, format } = parsePalletCode(palletCode);
-    
+
     // Attempt to retrieve existing pallet
     const params = {
       TableName: PALLETS_TABLE,
@@ -62,15 +62,14 @@ async function assignPallet(palletCode, ubicacion = "PACKING") {
 
     // Create a new pallet if not found
     if (!pallet) {
-      createPallet(palletCode, ubicacion)
-      
+      createPallet(palletCode, ubicacion);
     } else {
       console.log(`✅ Found existing pallet: ${JSON.stringify(pallet)}`);
     }
 
     return pallet;
   } catch (error) {
-    console.error("❌ Error during pallet assignment:", error);
+    console.error('❌ Error during pallet assignment:', error);
     throw new Error(`Failed to get or create pallet: ${error.message}`);
   }
 }

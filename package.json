@@ -10,7 +10,13 @@
     "env:dev": "echo 'STAGE=dev\nNODE_ENV=development' > .env && cat .env",
     "env:prod": "echo 'STAGE=main\nNODE_ENV=production' > .env && cat .env",
     "check-env": "node scripts/check-environment.js",
-    "test:boxes": "node scripts/test-boxes-model.js"
+    "test:boxes": "node scripts/test-boxes-model.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:dirs": "node scripts/format-code.js",
+    "format:staged": "node scripts/format-staged.js",
+    "pre-commit": "node scripts/format-staged.js",
+    "pre-deploy": "npm run format"
   },
   "keywords": [],
   "author": "",
@@ -20,5 +26,8 @@
     "aws-sdk": "^2.1692.0",
     "dotenv": "^16.3.1",
     "exceljs": "^4.3.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.1.0"
   }
 }

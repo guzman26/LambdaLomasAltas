@@ -9,12 +9,11 @@ const TABLE_NAME = 'Boxes';
  * @param {Object} event - Lambda event
  * @returns {Object} API response
  */
-const getBoxesInPallet = async (event) => {
+const getBoxesInPallet = async event => {
   try {
     const body = JSON.parse(event.body);
     const { codigos } = body;
-    console.log('🔎 Searching for boxes:', codigos)
-
+    console.log('🔎 Searching for boxes:', codigos);
 
     if (!Array.isArray(codigos) || codigos.length === 0) {
       return createApiResponse(400, "Debe proporcionar una lista de códigos en 'codigos'.");
@@ -33,9 +32,9 @@ const getBoxesInPallet = async (event) => {
       const params = {
         RequestItems: {
           [TABLE_NAME]: {
-            Keys: batch
-          }
-        }
+            Keys: batch,
+          },
+        },
       };
 
       const result = await dynamoDB.batchGet(params).promise();
@@ -47,7 +46,9 @@ const getBoxesInPallet = async (event) => {
     return createApiResponse(200, `✅ Se encontraron ${allResults.length} cajas`, allResults);
   } catch (error) {
     console.error('❌ Error fetching box details:', error);
-    return createApiResponse(500, 'Error interno al obtener detalles de las cajas', { error: error.message });
+    return createApiResponse(500, 'Error interno al obtener detalles de las cajas', {
+      error: error.message,
+    });
   }
 };
 

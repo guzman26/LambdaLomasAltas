@@ -26,7 +26,7 @@ jobs:
 
       - name: Set environment variable for production
         run: echo "STAGE=main" >> $GITHUB_ENV
-          
+
       - name: Create .env file for production environment
         run: |
           echo "# Archivo de entorno generado automáticamente por GitHub Actions" > .env
@@ -38,7 +38,7 @@ jobs:
           echo "ENV_SOURCE=github_actions" >> .env
           echo "DEPLOYMENT_BRANCH=${GITHUB_REF##*/}" >> .env
           echo "DEPLOYMENT_TIMESTAMP=$(date +%s)" >> .env
-          
+
           echo "Contenido del archivo .env:"
           cat .env
 

@@ -30,8 +30,8 @@ async function generateProductionReport(startDate, endDate) {
       FilterExpression: 'fechaRegistro BETWEEN :startDate AND :endDate',
       ExpressionAttributeValues: {
         ':startDate': startDate,
-        ':endDate': endDate
-      }
+        ':endDate': endDate,
+      },
     };
 
     const eggResults = await dynamoDB.scan(eggParams).promise();
@@ -60,21 +60,21 @@ async function generateProductionReport(startDate, endDate) {
     return {
       periodo: {
         inicio: startDate,
-        fin: endDate
+        fin: endDate,
       },
       totalProduccion: eggs.length,
       produccionDiaria: Object.entries(productionByDay).map(([fecha, cantidad]) => ({
         fecha,
-        cantidad
+        cantidad,
       })),
       produccionPorCalibre: Object.entries(productionByCalibra).map(([calibre, cantidad]) => ({
         calibre,
-        cantidad
+        cantidad,
       })),
       produccionPorFormato: Object.entries(productionByFormato).map(([formato, cantidad]) => ({
         formato,
-        cantidad
-      }))
+        cantidad,
+      })),
     };
   } catch (error) {
     console.error('❌ Error al generar informe de producción:', error);
@@ -90,51 +90,60 @@ async function generateInventoryReport() {
   try {
     // Consultar huevos por ubicación
     const [packingEggs, bodegaEggs, ventaEggs, transitoEggs] = await Promise.all([
-      dynamoDB.scan({
-        TableName: EGG_TABLE,
-        IndexName: 'ubicacion-index',
-        KeyConditionExpression: '#ubicacion = :locationValue',
-        ExpressionAttributeNames: { '#ubicacion': 'ubicacion' },
-        ExpressionAttributeValues: { ':locationValue': 'PACKING' }
-      }).promise(),
-      
-      dynamoDB.scan({
-        TableName: EGG_TABLE,
-        IndexName: 'ubicacion-index',
-        KeyConditionExpression: '#ubicacion = :locationValue',
-        ExpressionAttributeNames: { '#ubicacion': 'ubicacion' },
-        ExpressionAttributeValues: { ':locationValue': 'BODEGA' }
-      }).promise(),
-      
-      dynamoDB.scan({
-        TableName: EGG_TABLE,
-        IndexName: 'ubicacion-index',
-        KeyConditionExpression: '#ubicacion = :locationValue',
-        ExpressionAttributeNames: { '#ubicacion': 'ubicacion' },
-        ExpressionAttributeValues: { ':locationValue': 'VENTA' }
-      }).promise(),
-      
-      dynamoDB.scan({
-        TableName: EGG_TABLE,
-        IndexName: 'ubicacion-index',
-        KeyConditionExpression: '#ubicacion = :locationValue',
-        ExpressionAttributeNames: { '#ubicacion': 'ubicacion' },
-        ExpressionAttributeValues: { ':locationValue': 'TRANSITO' }
-      }).promise()
+      dynamoDB
+        .scan({
+          TableName: EGG_TABLE,
+          IndexName: 'ubicacion-index',
+          KeyConditionExpression: '#ubicacion = :locationValue',
+          ExpressionAttributeNames: { '#ubicacion': 'ubicacion' },
+          ExpressionAttributeValues: { ':locationValue': 'PACKING' },
+        })
+        .promise(),
+
+      dynamoDB
+        .scan({
+          TableName: EGG_TABLE,
+          IndexName: 'ubicacion-index',
+          KeyConditionExpression: '#ubicacion = :locationValue',
+          ExpressionAttributeNames: { '#ubicacion': 'ubicacion' },
+          ExpressionAttributeValues: { ':locationValue': 'BODEGA' },
+        })
+        .promise(),
+
+      dynamoDB
+        .scan({
+          TableName: EGG_TABLE,
+          IndexName: 'ubicacion-index',
+          KeyConditionExpression: '#ubicacion = :locationValue',
+          ExpressionAttributeNames: { '#ubicacion': 'ubicacion' },
+          ExpressionAttributeValues: { ':locationValue': 'VENTA' },
+        })
+        .promise(),
+
+      dynamoDB
+        .scan({
+          TableName: EGG_TABLE,
+          IndexName: 'ubicacion-index',
+          KeyConditionExpression: '#ubicacion = :locationValue',
+          ExpressionAttributeNames: { '#ubicacion': 'ubicacion' },
+          ExpressionAttributeValues: { ':locationValue': 'TRANSITO' },
+        })
+        .promise(),
     ]);
 
     // Consultar pallets
     const pallets = await dynamoDB.scan({ TableName: PALLETS_TABLE }).promise();
-    
+
     // Calcular estadísticas de pallets
     const activePallets = pallets.Items.filter(p => !p.fechaCierre);
     const closedPallets = pallets.Items.filter(p => p.fechaCierre);
-    
+
     // Calcular ocupación promedio de pallets
-    const avgOccupation = pallets.Items.length > 0
-      ? pallets.Items.reduce((sum, p) => sum + (p.cantidadCajas || 0), 0) / pallets.Items.length
-      : 0;
-    
+    const avgOccupation =
+      pallets.Items.length > 0
+        ? pallets.Items.reduce((sum, p) => sum + (p.cantidadCajas || 0), 0) / pallets.Items.length
+        : 0;
+
     // Generar informe
     return {
       fechaGeneracion: new Date().toISOString(),
@@ -143,18 +152,28 @@ async function generateInventoryReport() {
         bodega: bodegaEggs.Items.length,
         venta: ventaEggs.Items.length,
         transito: transitoEggs.Items.length,
-        total: packingEggs.Items.length + bodegaEggs.Items.length + ventaEggs.Items.length + transitoEggs.Items.length
+        total:
+          packingEggs.Items.length +
+          bodegaEggs.Items.length +
+          ventaEggs.Items.length +
+          transitoEggs.Items.length,
       },
       pallets: {
         total: pallets.Items.length,
         activos: activePallets.length,
         cerrados: closedPallets.length,
-        ocupacionPromedio: avgOccupation.toFixed(2)
+        ocupacionPromedio: avgOccupation.toFixed(2),
       },
       distribuciones: {
-        porCalibre: calcularDistribucion(packingEggs.Items.concat(bodegaEggs.Items, ventaEggs.Items, transitoEggs.Items), 'calibre'),
-        porFormato: calcularDistribucion(packingEggs.Items.concat(bodegaEggs.Items, ventaEggs.Items, transitoEggs.Items), 'formato')
-      }
+        porCalibre: calcularDistribucion(
+          packingEggs.Items.concat(bodegaEggs.Items, ventaEggs.Items, transitoEggs.Items),
+          'calibre'
+        ),
+        porFormato: calcularDistribucion(
+          packingEggs.Items.concat(bodegaEggs.Items, ventaEggs.Items, transitoEggs.Items),
+          'formato'
+        ),
+      },
     };
   } catch (error) {
     console.error('❌ Error al generar informe de inventario:', error);
@@ -172,39 +191,40 @@ async function generateIssuesReport(startDate, endDate) {
   try {
     // Consultar problemas en el rango de fechas
     const issuesParams = {
-      TableName: ISSUES_TABLE
+      TableName: ISSUES_TABLE,
     };
-    
+
     if (startDate && endDate) {
       issuesParams.FilterExpression = 'timestamp BETWEEN :startDate AND :endDate';
       issuesParams.ExpressionAttributeValues = {
         ':startDate': startDate,
-        ':endDate': endDate
+        ':endDate': endDate,
       };
     }
-    
+
     const issuesResults = await dynamoDB.scan(issuesParams).promise();
     const issues = issuesResults.Items || [];
-    
+
     // Agrupar por estado
     const issuesByStatus = {
       PENDING: issues.filter(i => !i.status || i.status === 'PENDING'),
       IN_PROGRESS: issues.filter(i => i.status === 'IN_PROGRESS'),
-      RESOLVED: issues.filter(i => i.status === 'RESOLVED')
+      RESOLVED: issues.filter(i => i.status === 'RESOLVED'),
     };
-    
+
     // Calcular tiempo promedio de resolución (para los que tienen resolución)
     const resolvedIssues = issues.filter(i => i.status === 'RESOLVED' && i.lastUpdated);
     let avgResolutionTime = 0;
-    
+
     if (resolvedIssues.length > 0) {
-      avgResolutionTime = resolvedIssues.reduce((sum, issue) => {
-        const createdAt = new Date(issue.timestamp);
-        const resolvedAt = new Date(issue.lastUpdated);
-        return sum + (resolvedAt - createdAt) / (1000 * 60 * 60); // Horas
-      }, 0) / resolvedIssues.length;
+      avgResolutionTime =
+        resolvedIssues.reduce((sum, issue) => {
+          const createdAt = new Date(issue.timestamp);
+          const resolvedAt = new Date(issue.lastUpdated);
+          return sum + (resolvedAt - createdAt) / (1000 * 60 * 60); // Horas
+        }, 0) / resolvedIssues.length;
     }
-    
+
     // Generar informe
     return {
       periodo: startDate && endDate ? { inicio: startDate, fin: endDate } : 'Todos los tiempos',
@@ -212,7 +232,7 @@ async function generateIssuesReport(startDate, endDate) {
       porEstado: {
         pendientes: issuesByStatus.PENDING.length,
         enProgreso: issuesByStatus.IN_PROGRESS.length,
-        resueltos: issuesByStatus.RESOLVED.length
+        resueltos: issuesByStatus.RESOLVED.length,
       },
       tiempoPromedioResolucion: `${avgResolutionTime.toFixed(2)} horas`,
       issuesRecientes: issues
@@ -222,8 +242,8 @@ async function generateIssuesReport(startDate, endDate) {
           id: i.IssueNumber,
           descripcion: i.descripcion,
           fecha: i.timestamp,
-          estado: i.status || 'PENDING'
-        }))
+          estado: i.status || 'PENDING',
+        })),
     };
   } catch (error) {
     console.error('❌ Error al generar informe de problemas:', error);
@@ -239,16 +259,16 @@ async function generateIssuesReport(startDate, endDate) {
  */
 function calcularDistribucion(items, field) {
   const distribution = {};
-  
+
   items.forEach(item => {
     const value = item[field] || 'N/A';
     distribution[value] = (distribution[value] || 0) + 1;
   });
-  
+
   return Object.entries(distribution).map(([valor, cantidad]) => ({
     valor,
     cantidad,
-    porcentaje: items.length > 0 ? ((cantidad / items.length) * 100).toFixed(2) + '%' : '0%'
+    porcentaje: items.length > 0 ? ((cantidad / items.length) * 100).toFixed(2) + '%' : '0%',
   }));
 }
 
@@ -260,13 +280,13 @@ function calcularDistribucion(items, field) {
 async function generateReportHandler(event) {
   try {
     const { reportType, startDate, endDate } = JSON.parse(event.body || '{}');
-    
+
     if (!reportType) {
       return createApiResponse(400, 'Tipo de informe no especificado');
     }
-    
+
     let reportData;
-    
+
     switch (reportType) {
       case 'production':
         reportData = await generateProductionReport(startDate, endDate);
@@ -280,17 +300,19 @@ async function generateReportHandler(event) {
       default:
         return createApiResponse(400, `Tipo de informe no válido: ${reportType}`);
     }
-    
+
     // Registrar la generación del informe
-    await dynamoDB.put({
-      TableName: ADMIN_LOGS_TABLE,
-      Item: {
-        operacion: `REPORT_${reportType.toUpperCase()}`,
-        timestamp: new Date().toISOString(),
-        parametros: { startDate, endDate }
-      }
-    }).promise();
-    
+    await dynamoDB
+      .put({
+        TableName: ADMIN_LOGS_TABLE,
+        Item: {
+          operacion: `REPORT_${reportType.toUpperCase()}`,
+          timestamp: new Date().toISOString(),
+          parametros: { startDate, endDate },
+        },
+      })
+      .promise();
+
     return createApiResponse(200, `Informe de ${reportType} generado correctamente`, reportData);
   } catch (error) {
     console.error('❌ Error al generar informe:', error);
@@ -302,5 +324,5 @@ module.exports = {
   generateProductionReport,
   generateInventoryReport,
   generateIssuesReport,
-  generateReportHandler
-}; 
+  generateReportHandler,
+};

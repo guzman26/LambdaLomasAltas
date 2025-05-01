@@ -3,10 +3,10 @@
  */
 const AWS = require('aws-sdk');
 const ExcelJS = require('exceljs');
-const { 
-  generateProductionReport, 
-  generateInventoryReport, 
-  generateIssuesReport 
+const {
+  generateProductionReport,
+  generateInventoryReport,
+  generateIssuesReport,
 } = require('./generateReports');
 const createApiResponse = require('../utils/response');
 
@@ -28,7 +28,7 @@ async function generateExcelReport(reportType, startDate, endDate) {
     // 1. Obtener datos según el tipo de reporte
     let reportData;
     let reportTitle;
-    
+
     switch (reportType) {
       case 'production':
         if (!startDate || !endDate) {
@@ -53,7 +53,7 @@ async function generateExcelReport(reportType, startDate, endDate) {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'Sistema de Gestión de Huevos';
     workbook.created = new Date();
-    
+
     // 3. Generar hojas según el tipo de reporte
     switch (reportType) {
       case 'production':
@@ -66,35 +66,37 @@ async function generateExcelReport(reportType, startDate, endDate) {
         generateIssuesWorksheets(workbook, reportData);
         break;
     }
-    
+
     // 4. Guardar el archivo Excel en un buffer
     const excelBuffer = await workbook.xlsx.writeBuffer();
-    
+
     // 5. Subir a S3
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const reportFileName = `${reportType}_${timestamp}.xlsx`;
     const s3Key = `excel-reports/${reportFileName}`;
-    
-    await s3.putObject({
-      Bucket: REPORTS_BUCKET,
-      Key: s3Key,
-      Body: excelBuffer,
-      ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    }).promise();
-    
+
+    await s3
+      .putObject({
+        Bucket: REPORTS_BUCKET,
+        Key: s3Key,
+        Body: excelBuffer,
+        ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
+      .promise();
+
     // 6. Generar URL firmada para descarga
     const expirationSeconds = 60 * 60 * 24; // 24 horas
     const signedUrl = s3.getSignedUrl('getObject', {
       Bucket: REPORTS_BUCKET,
       Key: s3Key,
-      Expires: expirationSeconds
+      Expires: expirationSeconds,
     });
-    
+
     return {
       reportName: reportTitle,
       fileName: reportFileName,
       downloadUrl: signedUrl,
-      expiresIn: `${expirationSeconds / 3600} horas`
+      expiresIn: `${expirationSeconds / 3600} horas`,
     };
   } catch (error) {
     console.error('❌ Error al generar reporte Excel:', error);
@@ -110,56 +112,56 @@ async function generateExcelReport(reportType, startDate, endDate) {
 function generateProductionWorksheets(workbook, data) {
   // Hoja de resumen
   const summarySheet = workbook.addWorksheet('Resumen de Producción');
-  
+
   summarySheet.columns = [
     { header: 'Concepto', key: 'concepto', width: 30 },
-    { header: 'Valor', key: 'valor', width: 15 }
+    { header: 'Valor', key: 'valor', width: 15 },
   ];
-  
+
   summarySheet.addRows([
     { concepto: 'Período', valor: `${data.periodo.inicio} a ${data.periodo.fin}` },
-    { concepto: 'Total Producción', valor: data.totalProduccion }
+    { concepto: 'Total Producción', valor: data.totalProduccion },
   ]);
-  
+
   // Aplicar estilos
   summarySheet.getRow(1).font = { bold: true };
-  
+
   // Hoja de producción diaria
   const dailySheet = workbook.addWorksheet('Producción Diaria');
-  
+
   dailySheet.columns = [
     { header: 'Fecha', key: 'fecha', width: 15 },
-    { header: 'Cantidad', key: 'cantidad', width: 15 }
+    { header: 'Cantidad', key: 'cantidad', width: 15 },
   ];
-  
+
   dailySheet.addRows(data.produccionDiaria);
-  
+
   // Aplicar estilos
   dailySheet.getRow(1).font = { bold: true };
-  
+
   // Hoja de producción por calibre
   const caliberSheet = workbook.addWorksheet('Por Calibre');
-  
+
   caliberSheet.columns = [
     { header: 'Calibre', key: 'calibre', width: 15 },
-    { header: 'Cantidad', key: 'cantidad', width: 15 }
+    { header: 'Cantidad', key: 'cantidad', width: 15 },
   ];
-  
+
   caliberSheet.addRows(data.produccionPorCalibre);
-  
+
   // Aplicar estilos
   caliberSheet.getRow(1).font = { bold: true };
-  
+
   // Hoja de producción por formato
   const formatSheet = workbook.addWorksheet('Por Formato');
-  
+
   formatSheet.columns = [
     { header: 'Formato', key: 'formato', width: 15 },
-    { header: 'Cantidad', key: 'cantidad', width: 15 }
+    { header: 'Cantidad', key: 'cantidad', width: 15 },
   ];
-  
+
   formatSheet.addRows(data.produccionPorFormato);
-  
+
   // Aplicar estilos
   formatSheet.getRow(1).font = { bold: true };
 }
@@ -172,12 +174,12 @@ function generateProductionWorksheets(workbook, data) {
 function generateInventoryWorksheets(workbook, data) {
   // Hoja de resumen
   const summarySheet = workbook.addWorksheet('Resumen de Inventario');
-  
+
   summarySheet.columns = [
     { header: 'Concepto', key: 'concepto', width: 30 },
-    { header: 'Valor', key: 'valor', width: 15 }
+    { header: 'Valor', key: 'valor', width: 15 },
   ];
-  
+
   summarySheet.addRows([
     { concepto: 'Fecha de Generación', valor: data.fechaGeneracion.split('T')[0] },
     { concepto: 'Total Huevos', valor: data.totalInventario.total },
@@ -188,37 +190,37 @@ function generateInventoryWorksheets(workbook, data) {
     { concepto: 'Total Pallets', valor: data.pallets.total },
     { concepto: 'Pallets Activos', valor: data.pallets.activos },
     { concepto: 'Pallets Cerrados', valor: data.pallets.cerrados },
-    { concepto: 'Ocupación Promedio', valor: data.pallets.ocupacionPromedio }
+    { concepto: 'Ocupación Promedio', valor: data.pallets.ocupacionPromedio },
   ]);
-  
+
   // Aplicar estilos
   summarySheet.getRow(1).font = { bold: true };
-  
+
   // Hoja de distribución por calibre
   const caliberSheet = workbook.addWorksheet('Distribución por Calibre');
-  
+
   caliberSheet.columns = [
     { header: 'Calibre', key: 'valor', width: 15 },
     { header: 'Cantidad', key: 'cantidad', width: 15 },
-    { header: 'Porcentaje', key: 'porcentaje', width: 15 }
+    { header: 'Porcentaje', key: 'porcentaje', width: 15 },
   ];
-  
+
   caliberSheet.addRows(data.distribuciones.porCalibre);
-  
+
   // Aplicar estilos
   caliberSheet.getRow(1).font = { bold: true };
-  
+
   // Hoja de distribución por formato
   const formatSheet = workbook.addWorksheet('Distribución por Formato');
-  
+
   formatSheet.columns = [
     { header: 'Formato', key: 'valor', width: 15 },
     { header: 'Cantidad', key: 'cantidad', width: 15 },
-    { header: 'Porcentaje', key: 'porcentaje', width: 15 }
+    { header: 'Porcentaje', key: 'porcentaje', width: 15 },
   ];
-  
+
   formatSheet.addRows(data.distribuciones.porFormato);
-  
+
   // Aplicar estilos
   formatSheet.getRow(1).font = { bold: true };
 }
@@ -231,42 +233,48 @@ function generateInventoryWorksheets(workbook, data) {
 function generateIssuesWorksheets(workbook, data) {
   // Hoja de resumen
   const summarySheet = workbook.addWorksheet('Resumen de Problemas');
-  
+
   summarySheet.columns = [
     { header: 'Concepto', key: 'concepto', width: 30 },
-    { header: 'Valor', key: 'valor', width: 15 }
+    { header: 'Valor', key: 'valor', width: 15 },
   ];
-  
+
   summarySheet.addRows([
-    { concepto: 'Período', valor: typeof data.periodo === 'string' ? data.periodo : `${data.periodo.inicio} a ${data.periodo.fin}` },
+    {
+      concepto: 'Período',
+      valor:
+        typeof data.periodo === 'string'
+          ? data.periodo
+          : `${data.periodo.inicio} a ${data.periodo.fin}`,
+    },
     { concepto: 'Total de Problemas', valor: data.totalIssues },
     { concepto: 'Problemas Pendientes', valor: data.porEstado.pendientes },
     { concepto: 'Problemas En Progreso', valor: data.porEstado.enProgreso },
     { concepto: 'Problemas Resueltos', valor: data.porEstado.resueltos },
-    { concepto: 'Tiempo Promedio de Resolución', valor: data.tiempoPromedioResolucion }
+    { concepto: 'Tiempo Promedio de Resolución', valor: data.tiempoPromedioResolucion },
   ]);
-  
+
   // Aplicar estilos
   summarySheet.getRow(1).font = { bold: true };
-  
+
   // Hoja de problemas recientes
   const recentSheet = workbook.addWorksheet('Problemas Recientes');
-  
+
   recentSheet.columns = [
     { header: 'ID', key: 'id', width: 40 },
     { header: 'Descripción', key: 'descripcion', width: 50 },
     { header: 'Fecha', key: 'fecha', width: 20 },
-    { header: 'Estado', key: 'estado', width: 15 }
+    { header: 'Estado', key: 'estado', width: 15 },
   ];
-  
+
   // Formatear fechas para el reporte
   const formattedIssues = data.issuesRecientes.map(issue => ({
     ...issue,
-    fecha: new Date(issue.fecha).toLocaleString()
+    fecha: new Date(issue.fecha).toLocaleString(),
   }));
-  
+
   recentSheet.addRows(formattedIssues);
-  
+
   // Aplicar estilos
   recentSheet.getRow(1).font = { bold: true };
 }
@@ -279,13 +287,13 @@ function generateIssuesWorksheets(workbook, data) {
 async function generateExcelReportHandler(event) {
   try {
     const { reportType, startDate, endDate, accessToken } = JSON.parse(event.body || '{}');
-    
+
     if (!reportType) {
       return createApiResponse(400, 'Tipo de reporte no especificado');
     }
-    
+
     // Aquí podríamos agregar validación de token de acceso si es necesario
-    
+
     const reportInfo = await generateExcelReport(reportType, startDate, endDate);
     return createApiResponse(200, 'Reporte Excel generado exitosamente', reportInfo);
   } catch (error) {
@@ -319,12 +327,12 @@ async function generateCustomEggReport(params) {
       formato,
       palletId,
       campos = ['codigo', 'ubicacion', 'fechaRegistro', 'calibre', 'formato'],
-      agrupacion = []
+      agrupacion = [],
     } = params;
 
     // Construir la consulta
     let queryParams = {
-      TableName: EGG_TABLE
+      TableName: EGG_TABLE,
     };
 
     // Agregar filtros si existen
@@ -394,137 +402,143 @@ async function generateCustomEggReport(params) {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'Sistema de Gestión de Huevos';
     workbook.created = new Date();
-    
+
     // Crear worksheet principal
     const mainSheet = workbook.addWorksheet('Datos Detallados');
-    
+
     // Definir columnas
     const columns = campos.map(campo => {
-      const width = campo === 'codigo' || campo === 'palletId' ? 20 :
-                  campo === 'descripcion' ? 40 : 15;
-                  
+      const width =
+        campo === 'codigo' || campo === 'palletId' ? 20 : campo === 'descripcion' ? 40 : 15;
+
       return {
         header: campo.charAt(0).toUpperCase() + campo.slice(1),
         key: campo,
-        width
+        width,
       };
     });
-    
+
     mainSheet.columns = columns;
-    
+
     // Agregar datos
     mainSheet.addRows(eggs);
-    
+
     // Aplicar estilos
     mainSheet.getRow(1).font = { bold: true };
     mainSheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
-    
+
     // Si hay agrupaciones, crear hojas adicionales
     if (agrupacion.length > 0) {
       agrupacion.forEach(campoAgrupacion => {
         // Crear objeto para agrupar
         const groupedData = {};
-        
+
         eggs.forEach(egg => {
           const groupValue = egg[campoAgrupacion] || 'N/A';
-          
+
           if (!groupedData[groupValue]) {
             groupedData[groupValue] = [];
           }
-          
+
           groupedData[groupValue].push(egg);
         });
-        
+
         // Crear worksheet para esta agrupación
         const groupSheet = workbook.addWorksheet(`Por ${campoAgrupacion}`);
-        
+
         // Columnas para el resumen
         groupSheet.columns = [
-          { header: campoAgrupacion.charAt(0).toUpperCase() + campoAgrupacion.slice(1), key: 'grupo', width: 20 },
+          {
+            header: campoAgrupacion.charAt(0).toUpperCase() + campoAgrupacion.slice(1),
+            key: 'grupo',
+            width: 20,
+          },
           { header: 'Cantidad', key: 'cantidad', width: 15 },
-          { header: 'Porcentaje', key: 'porcentaje', width: 15 }
+          { header: 'Porcentaje', key: 'porcentaje', width: 15 },
         ];
-        
+
         // Agregar filas
         const rows = Object.entries(groupedData).map(([grupo, items]) => ({
           grupo,
           cantidad: items.length,
-          porcentaje: `${((items.length / eggs.length) * 100).toFixed(2)}%`
+          porcentaje: `${((items.length / eggs.length) * 100).toFixed(2)}%`,
         }));
-        
+
         groupSheet.addRows(rows);
-        
+
         // Aplicar estilos
         groupSheet.getRow(1).font = { bold: true };
       });
     }
-    
+
     // Crear hoja de resumen
     const summarySheet = workbook.addWorksheet('Resumen');
-    
+
     summarySheet.columns = [
       { header: 'Concepto', key: 'concepto', width: 30 },
-      { header: 'Valor', key: 'valor', width: 15 }
+      { header: 'Valor', key: 'valor', width: 15 },
     ];
-    
+
     const summaryRows = [
       { concepto: 'Título del Reporte', valor: title },
       { concepto: 'Fecha de Generación', valor: new Date().toLocaleString() },
-      { concepto: 'Total de Registros', valor: eggs.length }
+      { concepto: 'Total de Registros', valor: eggs.length },
     ];
-    
+
     if (ubicacion) {
       summaryRows.push({ concepto: 'Ubicación', valor: ubicacion });
     }
-    
+
     if (startDate && endDate) {
       summaryRows.push({ concepto: 'Período', valor: `${startDate} a ${endDate}` });
     }
-    
+
     if (calibre) {
       summaryRows.push({ concepto: 'Calibre', valor: calibre });
     }
-    
+
     if (formato) {
       summaryRows.push({ concepto: 'Formato', valor: formato });
     }
-    
+
     if (palletId) {
       summaryRows.push({ concepto: 'Pallet ID', valor: palletId });
     }
-    
+
     summarySheet.addRows(summaryRows);
     summarySheet.getRow(1).font = { bold: true };
-    
+
     // Guardar el archivo Excel en un buffer
     const excelBuffer = await workbook.xlsx.writeBuffer();
-    
+
     // Subir a S3
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const reportFileName = `custom_${timestamp}.xlsx`;
     const s3Key = `excel-reports/${reportFileName}`;
-    
-    await s3.putObject({
-      Bucket: REPORTS_BUCKET,
-      Key: s3Key,
-      Body: excelBuffer,
-      ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    }).promise();
-    
+
+    await s3
+      .putObject({
+        Bucket: REPORTS_BUCKET,
+        Key: s3Key,
+        Body: excelBuffer,
+        ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
+      .promise();
+
     // Generar URL firmada para descarga
     const expirationSeconds = 60 * 60 * 24; // 24 horas
     const signedUrl = s3.getSignedUrl('getObject', {
       Bucket: REPORTS_BUCKET,
       Key: s3Key,
-      Expires: expirationSeconds
+      Expires: expirationSeconds,
     });
-    
+
     return {
       reportName: title,
       fileName: reportFileName,
       downloadUrl: signedUrl,
       expiresIn: `${expirationSeconds / 3600} horas`,
-      totalRecords: eggs.length
+      totalRecords: eggs.length,
     };
   } catch (error) {
     console.error('❌ Error al generar reporte Excel personalizado:', error);
@@ -540,11 +554,11 @@ async function generateCustomEggReport(params) {
 async function generateCustomReportHandler(event) {
   try {
     const params = JSON.parse(event.body || '{}');
-    
+
     if (!params.title) {
       return createApiResponse(400, 'Se requiere un título para el reporte');
     }
-    
+
     const reportInfo = await generateCustomEggReport(params);
     return createApiResponse(200, 'Reporte Excel personalizado generado exitosamente', reportInfo);
   } catch (error) {
@@ -557,5 +571,5 @@ module.exports = {
   generateExcelReport,
   generateExcelReportHandler,
   generateCustomEggReport,
-  generateCustomReportHandler
-}; 
+  generateCustomReportHandler,
+};

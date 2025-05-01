@@ -1,7 +1,7 @@
-const AWS = require("aws-sdk");
+const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
-const EGGS_TABLE = "Boxes";
+const EGGS_TABLE = 'Boxes';
 
 /**
  * Returns all boxes that have not yet been assigned to a pallet.
@@ -10,11 +10,11 @@ const EGGS_TABLE = "Boxes";
 async function findBoxesWithoutPallet() {
   const params = {
     TableName: EGGS_TABLE,
-    IndexName: "palletId-index",
-    KeyConditionExpression: "palletId = :unassigned",
+    IndexName: 'palletId-index',
+    KeyConditionExpression: 'palletId = :unassigned',
     ExpressionAttributeValues: {
-      ":unassigned": "UNASSIGNED"
-    }
+      ':unassigned': 'UNASSIGNED',
+    },
   };
 
   try {
@@ -22,21 +22,22 @@ async function findBoxesWithoutPallet() {
     let lastEvaluatedKey = null;
 
     do {
-      const data = await dynamoDB.query({
-        ...params,
-        ExclusiveStartKey: lastEvaluatedKey
-      }).promise();
+      const data = await dynamoDB
+        .query({
+          ...params,
+          ExclusiveStartKey: lastEvaluatedKey,
+        })
+        .promise();
 
       results.push(...data.Items);
       lastEvaluatedKey = data.LastEvaluatedKey;
     } while (lastEvaluatedKey);
 
-
     console.log(`📦 Found ${results.length} unassigned boxes`);
     return results;
   } catch (error) {
-    console.error("❌ Error finding unassigned boxes:", error);
-    throw new Error("Failed to retrieve unassigned boxes.");
+    console.error('❌ Error finding unassigned boxes:', error);
+    throw new Error('Failed to retrieve unassigned boxes.');
   }
 }
 

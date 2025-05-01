@@ -1,7 +1,7 @@
-const AWS = require("aws-sdk");
+const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
-const EGGS_TABLE = "Boxes";
+const EGGS_TABLE = 'Boxes';
 
 /**
  * Función que obtiene los detalles de una caja, dado su código.
@@ -9,8 +9,6 @@ const EGGS_TABLE = "Boxes";
  */
 async function getBoxByCode(codigo) {
   try {
-    
-
     if (!codigo) {
       return {
         statusCode: 400,
@@ -35,16 +33,16 @@ async function getBoxByCode(codigo) {
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: "✅ Caja encontrada",
+        message: '✅ Caja encontrada',
         data: box,
       }),
     };
   } catch (error) {
-    console.error("❌ Error al buscar la caja:", error);
+    console.error('❌ Error al buscar la caja:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({
-        message: "❌ Error interno al buscar la caja.",
+        message: '❌ Error interno al buscar la caja.',
         error: error.message,
       }),
     };
