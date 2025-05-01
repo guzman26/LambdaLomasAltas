@@ -4,7 +4,7 @@ const AWS = require('aws-sdk');
 try {
   // Solo intentar importar dotenv si no estamos en Lambda
   const isLambda = !!(process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT);
-  
+
   if (!isLambda) {
     // Solo cargar dotenv en entorno local
     // eslint-disable-next-line global-require
@@ -29,12 +29,12 @@ function determineStage() {
   if (process.env.STAGE) {
     return process.env.STAGE;
   }
-  
+
   // 2. Si NODE_ENV es production, asumimos entorno principal
   if (process.env.NODE_ENV === 'production') {
     return 'main';
   }
-  
+
   // 3. Detectar entorno de GitHub Actions
   if (process.env.GITHUB_ACTIONS) {
     // Si estamos en la rama main o master
@@ -46,7 +46,7 @@ function determineStage() {
       return 'dev';
     }
   }
-  
+
   // 4. Valor predeterminado para desarrollo local
   return 'dev';
 }
@@ -59,7 +59,9 @@ const suffix = stage === 'dev' ? '-dev' : '';
 // Solo en desarrollo o en despliegue inicial
 if (process.env.NODE_ENV !== 'production' || process.env.DEBUG) {
   console.log(`[CONFIG] Entorno detectado: ${stage} (suffix: '${suffix}')`);
-  console.log(`[CONFIG] Variables de entorno: NODE_ENV=${process.env.NODE_ENV}, STAGE=${process.env.STAGE}`);
+  console.log(
+    `[CONFIG] Variables de entorno: NODE_ENV=${process.env.NODE_ENV}, STAGE=${process.env.STAGE}`
+  );
 }
 
 // Table name mappings
@@ -68,11 +70,11 @@ const Tables = {
   Pallets: `Pallets${suffix}`,
   Issues: `Issues${suffix}`,
   AdminLogs: `AdminLogs${suffix}`,
-  SystemConfig: `SystemConfig${suffix}`
+  SystemConfig: `SystemConfig${suffix}`,
 };
 
-module.exports = { 
-  dynamoDB, 
+module.exports = {
+  dynamoDB,
   Tables,
-  currentStage: stage
-}; 
+  currentStage: stage,
+};

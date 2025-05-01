@@ -61,6 +61,7 @@ El sistema se despliega automáticamente mediante GitHub Actions:
 - [deploy-dev.yml](.github/workflows/deploy-dev.yml): Despliegue a desarrollo
 
 Los workflows realizan automáticamente:
+
 1. Creación de archivo `.env` apropiado para el entorno
 2. Configuración de variables de entorno en la Lambda
 3. Empaquetado y despliegue del código
@@ -77,7 +78,7 @@ Para inicializar las tablas en DynamoDB:
 
 ```
 ├── .github/workflows/      # Configuración de CI/CD (GitHub Actions)
-├── handlers/               # Funciones de manejo de eventos 
+├── handlers/               # Funciones de manejo de eventos
 ├── models/                 # Modelos para DynamoDB (con soporte multi-entorno)
 ├── scripts/                # Scripts utilitarios (creación de tablas, etc.)
 └── utils/                  # Funciones de utilidad general
@@ -86,6 +87,6 @@ Para inicializar las tablas en DynamoDB:
 ## Beneficios del Enfoque Multi-entorno
 
 - Desarrollo y pruebas sin afectar datos de producción
-- Despliegue automático según la rama 
+- Despliegue automático según la rama
 - Aislamiento completo de datos entre entornos
-- Misma base de código para ambos entornos 
+- Misma base de código para ambos entornos

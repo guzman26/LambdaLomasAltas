@@ -18,13 +18,13 @@ async function createBox(boxData) {
     codigo: boxData.codigo,
     ubicacion: boxData.ubicacion || 'PACKING',
     timestamp: boxData.timestamp || new Date().toISOString(),
-    ...boxData
+    ...boxData,
   };
 
   const params = {
     TableName: tableName,
     Item: box,
-    ReturnValues: 'ALL_OLD'
+    ReturnValues: 'ALL_OLD',
   };
 
   try {
@@ -45,7 +45,7 @@ async function createBox(boxData) {
 async function getBoxByCode(codigo) {
   const params = {
     TableName: tableName,
-    Key: { codigo }
+    Key: { codigo },
   };
 
   try {
@@ -77,7 +77,7 @@ async function updateBox(codigo, updates) {
 
   // Prohibir actualizar el código (clave primaria)
   const excludedFields = ['codigo'];
-  
+
   Object.entries(updates).forEach(([key, value]) => {
     if (!excludedFields.includes(key)) {
       updateExpressions.push(`#${key} = :${key}`);
@@ -101,7 +101,7 @@ async function updateBox(codigo, updates) {
     UpdateExpression: `SET ${updateExpressions.join(', ')}`,
     ExpressionAttributeNames: expressionAttributeNames,
     ExpressionAttributeValues: expressionAttributeValues,
-    ReturnValues: 'ALL_NEW'
+    ReturnValues: 'ALL_NEW',
   };
 
   try {
@@ -123,7 +123,7 @@ async function deleteBox(codigo) {
   const params = {
     TableName: tableName,
     Key: { codigo },
-    ReturnValues: 'ALL_OLD'
+    ReturnValues: 'ALL_OLD',
   };
 
   try {
@@ -148,11 +148,11 @@ async function getBoxesByLocation(ubicacion) {
     IndexName: 'ubicacion-index',
     KeyConditionExpression: '#ubicacion = :ubicacionValue',
     ExpressionAttributeNames: {
-      '#ubicacion': 'ubicacion'
+      '#ubicacion': 'ubicacion',
     },
     ExpressionAttributeValues: {
-      ':ubicacionValue': ubicacion
-    }
+      ':ubicacionValue': ubicacion,
+    },
   };
 
   try {
@@ -171,16 +171,15 @@ async function getBoxesByLocation(ubicacion) {
  * @returns {Promise<Array<Object>>} Lista de boxes en ese pallet
  */
 async function getBoxesByPallet(palletId) {
-
   try {
     const params = {
       TableName: tableName,
       IndexName: 'palletId-index',
       KeyConditionExpression: 'palletId = :palletId',
       ExpressionAttributeValues: {
-        ':palletId': palletId
-      }
-    }
+        ':palletId': palletId,
+      },
+    };
     const result = await dynamoDB.query(params).promise();
     console.log(`Boxes encontrados en pallet ${palletId}: ${result.Items.length}`);
     return result.Items;
@@ -215,21 +214,23 @@ async function assignBoxToPallet(codigo, palletId) {
  * @returns {Promise<Object>} Conteo de boxes por ubicación
  */
 async function countBoxesByLocation() {
-    const ubicaciones = ['PACKING', 'BODEGA', 'VENTA'];
-    const counts = {};
-  
-    for (const u of ubicaciones) {
-      const res = await dynamoDB.query({
+  const ubicaciones = ['PACKING', 'BODEGA', 'VENTA'];
+  const counts = {};
+
+  for (const u of ubicaciones) {
+    const res = await dynamoDB
+      .query({
         TableName: tableName,
         IndexName: 'ubicacion-index',
         KeyConditionExpression: 'ubicacion = :u',
         ExpressionAttributeValues: { ':u': u },
-        Select: 'COUNT'
-      }).promise();
-      counts[u] = res.Count;       // res.Count devuelve el total sin traer Items
-    }
-    return counts;
+        Select: 'COUNT',
+      })
+      .promise();
+    counts[u] = res.Count; // res.Count devuelve el total sin traer Items
   }
+  return counts;
+}
 
 /**
  * Verificar si un código de box existe
@@ -258,5 +259,5 @@ module.exports = {
   moveBox,
   assignBoxToPallet,
   countBoxesByLocation,
-  boxExists
-}; 
+  boxExists,
+};

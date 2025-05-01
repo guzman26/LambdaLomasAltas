@@ -20,7 +20,7 @@ const createApiResponse = (statusCode, message, data = null) => {
       data,
     }),
   };
-  
+
   return response;
 };
 

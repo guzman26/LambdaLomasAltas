@@ -9,13 +9,13 @@ El sistema usa un sufijo `-dev` para las tablas cuando está en entorno de desar
 
 ### Tablas Disponibles
 
-| Tabla Base      | Entorno Dev       | Entorno Producción |
-|-----------------|-------------------|-------------------|
-| Boxes           | Boxes-dev         | Boxes             |
-| Pallets         | Pallets-dev       | Pallets           |
-| Issues          | Issues-dev        | Issues            |
-| AdminLogs       | AdminLogs-dev     | AdminLogs         |
-| SystemConfig    | SystemConfig-dev  | SystemConfig      |
+| Tabla Base   | Entorno Dev      | Entorno Producción |
+| ------------ | ---------------- | ------------------ |
+| Boxes        | Boxes-dev        | Boxes              |
+| Pallets      | Pallets-dev      | Pallets            |
+| Issues       | Issues-dev       | Issues             |
+| AdminLogs    | AdminLogs-dev    | AdminLogs          |
+| SystemConfig | SystemConfig-dev | SystemConfig       |
 
 ## Uso
 
@@ -28,9 +28,9 @@ const { dynamoDB, tableName } = require('../models/boxes');
 async function getBoxById(id) {
   const params = {
     TableName: tableName,
-    Key: { id }
+    Key: { id },
   };
-  
+
   try {
     const result = await dynamoDB.get(params).promise();
     return result.Item;
@@ -51,4 +51,4 @@ El sistema detecta automáticamente el entorno mediante la variable de entorno `
 Esta variable es establecida automáticamente en los workflows de GitHub Actions:
 
 - En el despliegue desde la rama `dev` → `STAGE=dev` → Tablas con sufijo `-dev`
-- En el despliegue desde `main`/`master` → `STAGE=main` → Tablas sin sufijo 
+- En el despliegue desde `main`/`master` → `STAGE=main` → Tablas sin sufijo

@@ -17,8 +17,8 @@ async function createIssue(descripcion) {
   const issue = {
     IssueNumber: require('uuid').v4(),
     descripcion: descripcion.trim(),
-    timestamp  : new Date().toISOString(),
-    estado     : 'PENDING'
+    timestamp: new Date().toISOString(),
+    estado: 'PENDING',
   };
 
   await dynamoDB.put({ TableName: tableName, Item: issue }).promise();
@@ -29,10 +29,12 @@ async function createIssue(descripcion) {
  * Obtener un issue por su IssueNumber
  */
 async function getIssue(id) {
-  const res = await dynamoDB.get({
-    TableName: tableName,
-    Key: { IssueNumber: id }
-  }).promise();
+  const res = await dynamoDB
+    .get({
+      TableName: tableName,
+      Key: { IssueNumber: id },
+    })
+    .promise();
   return res.Item || null;
 }
 
@@ -48,20 +50,22 @@ async function updateIssue(id, updates = {}) {
   for (const [k, v] of Object.entries(updates)) {
     if (allowed.includes(k)) {
       exp.push(`#${k} = :${k}`);
-      names[`#${k}`]  = k;
+      names[`#${k}`] = k;
       values[`:${k}`] = v;
     }
   }
   if (exp.length === 0) throw new Error('Nada que actualizar');
 
-  const res = await dynamoDB.update({
-    TableName: tableName,
-    Key: { IssueNumber: id },
-    UpdateExpression: `SET ${exp.join(', ')}`,
-    ExpressionAttributeNames: names,
-    ExpressionAttributeValues: values,
-    ReturnValues: 'ALL_NEW'
-  }).promise();
+  const res = await dynamoDB
+    .update({
+      TableName: tableName,
+      Key: { IssueNumber: id },
+      UpdateExpression: `SET ${exp.join(', ')}`,
+      ExpressionAttributeNames: names,
+      ExpressionAttributeValues: values,
+      ReturnValues: 'ALL_NEW',
+    })
+    .promise();
 
   return res.Attributes;
 }
@@ -71,5 +75,5 @@ module.exports = {
   tableName,
   createIssue,
   getIssue,
-  updateIssue
+  updateIssue,
 };
