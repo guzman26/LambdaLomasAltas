@@ -15,7 +15,7 @@ const { setSystemConfig, getSystemConfig } = require('./handlers/systemConfig');
 const closePalletHandler = require('./handlers/closePallet');
 const createPalletHandler = require('./handlers/createPallet');
 const updateBoxDescription = require('./handlers/updateBoxDescription');
-const getActivePallets = require('./handlers/getActivePallets');
+const getActivePalletsHandler = require('./handlers/getActivePallets');
 const getClosedPallets = require('./handlers/getClosedPallets');
 const getBoxesInPallet = require('./handlers/getBoxesInPallet');
 const getBoxByCode = require('./handlers/getBoxByCode');
@@ -95,10 +95,7 @@ const getRoutes = {
   '/getEggsByDate': getEggsByDate,
   '/production': getBoxes,
   '/getPallets': createHandler(getPalletsHandler),
-  '/getActivePallets': createHandler(async () => {
-    const result = await getActivePallets();
-    return createApiResponse(200, 'Active pallets fetched successfully', result);
-  }),
+  '/getActivePallets': createHandler(getActivePalletsHandler),
   '/getClosedPallets': createHandler(async event => {
     const { ubicacion } = helpers.getQueryParams(event);
     const result = await getClosedPallets(ubicacion);

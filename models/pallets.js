@@ -158,6 +158,21 @@ async function closePallet(codigo) {
   return pallet;
 }
 
+async function getOpenPallets() {
+    const params = {
+      TableName : tableName,
+      IndexName : 'estado-fechaCreacion-GSI',   // ya existe
+      KeyConditionExpression: '#e = :open',
+      ExpressionAttributeNames : { '#e': 'estado' },
+      ExpressionAttributeValues: { ':open': 'open' },
+      ScanIndexForward: false                   // más recientes primero
+    };
+  
+    const res = await dynamoDB.query(params).promise();
+    return res.Items;
+  }
+  
+
 module.exports = {
   dynamoDB,
   tableName,
@@ -166,4 +181,5 @@ module.exports = {
   getPallets,
   togglePalletStatus,
   closePallet,
+  getOpenPallets,
 };
