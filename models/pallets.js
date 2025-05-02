@@ -1,6 +1,5 @@
 // models/pallets.js
 const { dynamoDB, Tables } = require('./index');
-const { getBoxByCode, assignBoxToPallet } = require('./boxes');
 
 const tableName = Tables.Pallets;
 
@@ -202,8 +201,11 @@ async function addBoxToPallet(palletId, boxCode) {
     if ((pallet.cantidadCajas || 0) >= 60)
       throw new Error(`Pallet "${palletId}" está lleno`);
   
-    /* 2. Leer y validar box ----------------------------------------------------*/
-    const box = await getBoxByCode(boxCode);
+    // 2) Obtener box (lectura directa, sin requerir boxes.js)
+    const { Item: box } = await dynamoDB
+      .get({ TableName: Tables.Boxes, Key: { codigo: boxCode } })
+      .promise();
+
     if (!box) throw new Error(`Box "${boxCode}" no existe`);
   
     // ── compatibilidad calibre / formato / fecha
