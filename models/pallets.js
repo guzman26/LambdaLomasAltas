@@ -217,7 +217,7 @@ async function addBoxToPallet(palletId, boxCode) {
   
     if (p.caliber !== box.calibre)      throw new Error('Calibre no coincide');
     if (p.format  !== box.formato_caja) throw new Error('Formato no coincide');
-    if (pDate     !== bIso)             throw new Error('Fecha no coincide');
+    // if (pDate     !== bIso)             throw new Error('Fecha no coincide');
   
     /* 3. Operación atómica -----------------------------------------------------*/
     const tx = {
