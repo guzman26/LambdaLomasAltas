@@ -74,7 +74,9 @@ async function getPallets({ estado, ubicacion, fechaDesde, fechaHasta } = {}) {
       IndexName: 'estado-fechaCreacion-GSI',
       KeyConditionExpression:
         '#e = :e' + (fechaDesde && fechaHasta ? ' AND #f BETWEEN :d AND :h' : ''),
-      ExpressionAttributeNames: { '#e': 'estado', '#f': 'fechaCreacion' },
+      ExpressionAttributeNames : fechaDesde && fechaHasta
+        ? { '#e': 'estado', '#f': 'fechaCreacion' }
+        : { '#e': 'estado' },
       ExpressionAttributeValues: {
         ':e': estado,
         ...(fechaDesde && fechaHasta && { ':d': fechaDesde, ':h': fechaHasta }),
