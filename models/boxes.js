@@ -1,5 +1,5 @@
 const { dynamoDB, Tables } = require('./index');
-const { getPalletByCode, updatePalletBoxes } = require('./pallets');
+const { getPalletByCode } = require('./pallets');
 
 // DynamoDB client and table name for Boxes
 const tableName = Tables.Boxes;
