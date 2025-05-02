@@ -4,7 +4,7 @@ const getPackingEggs = require('./handlers/getPackingEggs');
 const getVentaEggs = require('./handlers/getVentaEggs');
 const getEggByCodigo = require('./handlers/getEggsByCodigo');
 const getEggsByDate = require('./handlers/getEggsByDate');
-const registerEgg = require('./handlers/registerEgg');
+const registerEggHandler = require('./handlers/registerEgg');
 const getPalletsHandler = require('./handlers/getPallets');
 const { moveEgg } = require('./handlers/moveBox');
 const { movePallet } = require('./handlers/movePallet');
@@ -146,8 +146,8 @@ const postRoutes = {
     } else {
       if (ubicacion === CONFIG.LOCATIONS.PACKING) {
         return palletCodigo
-          ? await registerEgg(codigo, palletCodigo, palletCodigo, scannedCodes)
-          : await registerEgg(codigo);
+          ? await registerEggHandler(codigo, palletCodigo, palletCodigo, scannedCodes)
+          : await registerEggHandler(codigo);
       } else {
         return await moveEgg(codigo, ubicacion);
       }
@@ -167,7 +167,7 @@ const postRoutes = {
     helpers.validateRequired({ codigo }, ['codigo']);
     const pallet = await getSystemConfig('ACTIVE_PALLET_CODE');
     if (!pallet) throw { statusCode: 400, message: 'No active pallet found. Please assign one.' };
-    return await registerEgg(codigo, pallet, customInfo);
+    return await registerEggHandler(codigo, pallet, customInfo);
   }),
 
   '/movePallet': createHandler(async event => {

@@ -43,12 +43,12 @@ async function findMatchingPallet(boxData) {
 /* =================================================================== */
 /* =========================  REGISTER EGG  ========================== */
 /* =================================================================== */
-module.exports = async function registerEgg(
+const registerEggHandler = async (
   codigoCaja,
   _unused,
   palletCodeFromClient,
   scannedCodes
-) {
+) => {
   /* 0️⃣  anti-rebote --------------------------------------------------*/
   const now = Date.now();
   if (recentlyProcessedBoxes.get(codigoCaja) &&
@@ -112,3 +112,5 @@ module.exports = async function registerEgg(
     );
   }
 };
+
+module.exports = registerEggHandler;
