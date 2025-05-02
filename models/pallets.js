@@ -192,56 +192,73 @@ async function getOrCreatePallet(codigo, ubicacion = 'PACKING') {
 }
 
 async function addBoxToPallet(palletId, boxCode) {
-    // 1) Obtener pallet
+    /* 1. Leer y validar pallet ------------------------------------------------*/
     const pallet = await getPalletByCode(palletId);
-    if (!pallet) throw new Error(`Pallet "${palletId}" no encontrado`);
-    if (pallet.estado !== 'open') throw new Error(`Pallet "${palletId}" no está abierto`);
-    if ((pallet.cantidadCajas || 0) >= 60) throw new Error(`Pallet "${palletId}" está lleno`);
+    if (!pallet)               throw new Error(`Pallet "${palletId}" no encontrado`);
+    if (pallet.estado !== 'open')
+      throw new Error(`Pallet "${palletId}" no está abierto`);
+    if ((pallet.cantidadCajas || 0) >= 60)
+      throw new Error(`Pallet "${palletId}" está lleno`);
   
-    // 2) Obtener box
+    /* 2. Leer y validar box ----------------------------------------------------*/
     const box = await getBoxByCode(boxCode);
     if (!box) throw new Error(`Box "${boxCode}" no existe`);
   
-    // 3) Validar compatibilidad calibre / formato / fecha
-    const p = parsePalletCode(pallet.codigo);          // usa función existente
-    const pDateIso = `${'20' + p.year}-W${p.weekOfYear}-${p.dayOfWeek}`;
+    // ── compatibilidad calibre / formato / fecha
+    const p      = parsePalletCode(pallet.codigo);
+    const pDate  = `20${p.year}-W${p.weekOfYear}-${p.dayOfWeek}`;
+    const bDate  = new Date(box.fecha_registro);
+    const bWeek  = getISOWeek(bDate);
+    const bIso   = `${bDate.getUTCFullYear()}-W${String(bWeek).padStart(2, '0')}-${bDate.getUTCDay()}`;
   
-    const boxDate = new Date(box.fecha_registro);
-    const boxWeek = getISOWeek(boxDate);
-    const boxDay  = String(boxDate.getUTCDay());
-    const boxDateIso = `${boxDate.getUTCFullYear()}-W${String(boxWeek).padStart(2,'0')}-${boxDay}`;
+    if (p.caliber !== box.calibre)      throw new Error('Calibre no coincide');
+    if (p.format  !== box.formato_caja) throw new Error('Formato no coincide');
+    if (pDate     !== bIso)             throw new Error('Fecha no coincide');
   
-    if (p.caliber !== box.calibre)        throw new Error('Calibre no coincide');
-    if (p.format  !== box.formato_caja)   throw new Error('Formato no coincide');
-    if (pDateIso  !== boxDateIso)         throw new Error('Fecha no coincide');
+    /* 3. Operación atómica -----------------------------------------------------*/
+    const tx = {
+      TransactItems: [
+        /* 3.1 – actualizar pallet */
+        {
+          Update: {
+            TableName: tableName,
+            Key: { codigo: palletId },
+            UpdateExpression: `
+              SET cajas        = list_append(if_not_exists(cajas, :empty), :nuevo),
+                  cantidadCajas = if_not_exists(cantidadCajas, :zero) + :inc`,
+            ConditionExpression:
+              'attribute_not_exists(cajas) OR NOT contains(cajas, :dup)',
+            ExpressionAttributeValues: {
+              ':nuevo' : [String(boxCode)], // asegúrate de que es STRING
+              ':empty' : [],
+              ':inc'   : 1,
+              ':zero'  : 0,
+              ':dup'   : String(boxCode)
+            }
+          }
+        },
+        /* 3.2 – actualizar box */
+        {
+          Update: {
+            TableName: Tables.Boxes,
+            Key: { codigo: boxCode },
+            UpdateExpression: 'SET palletId = :pid',
+            ExpressionAttributeValues: { ':pid': palletId }
+          }
+        }
+      ]
+    };
   
-    // 4) Actualizar pallet (evita duplicados)
-    const upd = await dynamoDB.update({
-      TableName: tableName,
-      Key: { codigo: palletId },
-      UpdateExpression:
-        'SET cajas = list_append(if_not_exists(cajas,:e), :nuevo), cantidadCajas = cantidadCajas + :inc',
-      ConditionExpression: 'attribute_not_exists(cajas) OR NOT contains(cajas, :dup)',
-      ExpressionAttributeValues: {
-        ':nuevo': [boxCode],
-        ':e': [],
-        ':inc': 1,
-        ':dup': boxCode
-      },
-      ReturnValues: 'ALL_NEW'
-    }).promise().catch(async err => {
-      if (err.code === 'ConditionalCheckFailedException') {
-        // ya estaba dentro → obtener estado actual
-        const { Item } = await dynamoDB.get({ TableName: tableName, Key: { codigo: palletId }}).promise();
-        return { Attributes: Item };
-      }
-      throw err;
-    });
+    await dynamoDB.transactWrite(tx).promise();
   
-    // 5) Actualizar la caja con el palletId
-    await assignBoxToPallet(boxCode, palletId);
+    /* 4. Devolver pallet fresco con lectura fuerte ----------------------------*/
+    const { Item: updated } = await dynamoDB.get({
+      TableName      : tableName,
+      Key             : { codigo: palletId },
+      ConsistentRead  : true
+    }).promise();
   
-    return upd.Attributes;
+    return updated;
   }
   
   /** Devuelve semana ISO */
