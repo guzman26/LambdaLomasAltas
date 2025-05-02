@@ -73,9 +73,8 @@ async function getPallets({ estado, ubicacion, fechaDesde, fechaHasta } = {}) {
       IndexName: 'estado-fechaCreacion-GSI',
       KeyConditionExpression:
         '#e = :e' + (fechaDesde && fechaHasta ? ' AND #f BETWEEN :d AND :h' : ''),
-      ExpressionAttributeNames : fechaDesde && fechaHasta
-        ? { '#e': 'estado', '#f': 'fechaCreacion' }
-        : { '#e': 'estado' },
+      ExpressionAttributeNames:
+        fechaDesde && fechaHasta ? { '#e': 'estado', '#f': 'fechaCreacion' } : { '#e': 'estado' },
       ExpressionAttributeValues: {
         ':e': estado,
         ...(fechaDesde && fechaHasta && { ':d': fechaDesde, ':h': fechaHasta }),
@@ -193,86 +192,125 @@ async function getOrCreatePallet(codigo, ubicacion = 'PACKING') {
 }
 
 async function addBoxToPallet(palletId, boxCode) {
-    /* 1. Leer y validar pallet ------------------------------------------------*/
-    const pallet = await getPalletByCode(palletId);
-    if (!pallet)               throw new Error(`Pallet "${palletId}" no encontrado`);
-    if (pallet.estado !== 'open')
-      throw new Error(`Pallet "${palletId}" no está abierto`);
-    if ((pallet.cantidadCajas || 0) >= 60)
-      throw new Error(`Pallet "${palletId}" está lleno`);
-  
-    // 2) Obtener box (lectura directa, sin requerir boxes.js)
-    const { Item: box } = await dynamoDB
-      .get({ TableName: Tables.Boxes, Key: { codigo: boxCode } })
-      .promise();
+  /* 1. Leer y validar pallet ------------------------------------------------*/
+  const pallet = await getPalletByCode(palletId);
+  if (!pallet) throw new Error(`Pallet "${palletId}" no encontrado`);
+  if (pallet.estado !== 'open') throw new Error(`Pallet "${palletId}" no está abierto`);
+  if ((pallet.cantidadCajas || 0) >= 60) throw new Error(`Pallet "${palletId}" está lleno`);
 
-    if (!box) throw new Error(`Box "${boxCode}" no existe`);
-  
-    // ── compatibilidad calibre / formato / fecha
-    const p      = parsePalletCode(pallet.codigo);
-    const pDate  = `20${p.year}-W${p.weekOfYear}-${p.dayOfWeek}`;
-    const bDate  = new Date(box.fecha_registro);
-    const bWeek  = getISOWeek(bDate);
-    const bIso   = `${bDate.getUTCFullYear()}-W${String(bWeek).padStart(2, '0')}-${bDate.getUTCDay()}`;
-  
-    if (p.caliber !== box.calibre)      throw new Error('Calibre no coincide');
-    if (p.format  !== box.formato_caja) throw new Error('Formato no coincide');
-    // if (pDate     !== bIso)             throw new Error('Fecha no coincide');
-  
-    /* 3. Operación atómica -----------------------------------------------------*/
-    const tx = {
-      TransactItems: [
-        /* 3.1 – actualizar pallet */
-        {
-          Update: {
-            TableName: tableName,
-            Key: { codigo: palletId },
-            UpdateExpression: `
+  // 2) Obtener box (lectura directa, sin requerir boxes.js)
+  const { Item: box } = await dynamoDB
+    .get({ TableName: Tables.Boxes, Key: { codigo: boxCode } })
+    .promise();
+
+  if (!box) throw new Error(`Box "${boxCode}" no existe`);
+
+  // ── compatibilidad calibre / formato / fecha
+  const p = parsePalletCode(pallet.codigo);
+  const pDate = `20${p.year}-W${p.weekOfYear}-${p.dayOfWeek}`;
+  const bDate = new Date(box.fecha_registro);
+  const bWeek = getISOWeek(bDate);
+  const bIso = `${bDate.getUTCFullYear()}-W${String(bWeek).padStart(2, '0')}-${bDate.getUTCDay()}`;
+
+  if (p.caliber !== box.calibre) throw new Error('Calibre no coincide');
+  if (p.format !== box.formato_caja) throw new Error('Formato no coincide');
+  // if (pDate     !== bIso)             throw new Error('Fecha no coincide');
+
+  /* 3. Operación atómica -----------------------------------------------------*/
+  const tx = {
+    TransactItems: [
+      /* 3.1 – actualizar pallet */
+      {
+        Update: {
+          TableName: tableName,
+          Key: { codigo: palletId },
+          UpdateExpression: `
               SET cajas        = list_append(if_not_exists(cajas, :empty), :nuevo),
                   cantidadCajas = if_not_exists(cantidadCajas, :zero) + :inc`,
-            ConditionExpression:
-              'attribute_not_exists(cajas) OR NOT contains(cajas, :dup)',
-            ExpressionAttributeValues: {
-              ':nuevo' : [String(boxCode)], // asegúrate de que es STRING
-              ':empty' : [],
-              ':inc'   : 1,
-              ':zero'  : 0,
-              ':dup'   : String(boxCode)
-            }
-          }
+          ConditionExpression: 'attribute_not_exists(cajas) OR NOT contains(cajas, :dup)',
+          ExpressionAttributeValues: {
+            ':nuevo': [String(boxCode)], // asegúrate de que es STRING
+            ':empty': [],
+            ':inc': 1,
+            ':zero': 0,
+            ':dup': String(boxCode),
+          },
         },
-        /* 3.2 – actualizar box */
-        {
-          Update: {
-            TableName: Tables.Boxes,
-            Key: { codigo: boxCode },
-            UpdateExpression: 'SET palletId = :pid',
-            ExpressionAttributeValues: { ':pid': palletId }
-          }
-        }
-      ]
-    };
-  
-    await dynamoDB.transactWrite(tx).promise();
-  
-    /* 4. Devolver pallet fresco con lectura fuerte ----------------------------*/
-    const { Item: updated } = await dynamoDB.get({
-      TableName      : tableName,
-      Key             : { codigo: palletId },
-      ConsistentRead  : true
-    }).promise();
-  
-    return updated;
-  }
-  
-  /** Devuelve semana ISO */
-  function getISOWeek(d){
-    const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-    t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay()||7));
-    const yearStart = new Date(Date.UTC(t.getUTCFullYear(),0,1));
-    return Math.ceil(((t - yearStart) / 86400000 + 1)/7);
-  }
-  
+      },
+      /* 3.2 – actualizar box */
+      {
+        Update: {
+          TableName: Tables.Boxes,
+          Key: { codigo: boxCode },
+          UpdateExpression: 'SET palletId = :pid',
+          ExpressionAttributeValues: { ':pid': palletId },
+        },
+      },
+    ],
+  };
+
+  await dynamoDB.transactWrite(tx).promise();
+
+  /* 4. Devolver pallet fresco con lectura fuerte ----------------------------*/
+  const { Item: updated } = await dynamoDB
+    .get({
+      TableName: tableName,
+      Key: { codigo: palletId },
+      ConsistentRead: true,
+    })
+    .promise();
+
+  return updated;
+}
+
+/** Devuelve semana ISO */
+function getISOWeek(d) {
+  const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return Math.ceil(((t - yearStart) / 86400000 + 1) / 7);
+}
+
+async function deletePalletCascade(codigo) {
+  /* 1️⃣  Leer pallet */
+  const { Item: pallet } = await dynamoDB
+    .get({
+      TableName: tableName,
+      Key: { codigo },
+    })
+    .promise();
+
+  if (!pallet) return { success: false, message: `El pallet ${codigo} no existe` };
+
+  /* 2️⃣  Preparar TransactWriteItems ------------------------------ */
+  const tx = { TransactItems: [] };
+
+  // 2.1 – eliminar pallet
+  tx.TransactItems.push({
+    Delete: { TableName: tableName, Key: { codigo } },
+  });
+
+  // 2.2 – para cada caja, borrar atributo palletId (si existía)
+  (pallet.cajas || []).forEach(boxCode => {
+    tx.TransactItems.push({
+      Update: {
+        TableName: BOX_TABLE,
+        Key: { codigo: boxCode },
+        UpdateExpression: 'REMOVE palletId',
+        ConditionExpression: 'attribute_exists(codigo)',
+      },
+    });
+  });
+
+  /* 3️⃣  Ejecutar transacción */
+  await dynamoDB.transactWrite(tx).promise();
+
+  return {
+    success: true,
+    message: `Pallet ${codigo} eliminado y ${tx.TransactItems.length - 1} cajas actualizadas`,
+    data: { codigo, cajasAfectadas: (pallet.cajas || []).length },
+  };
+}
 
 module.exports = {
   dynamoDB,
@@ -286,4 +324,5 @@ module.exports = {
   getOrCreatePallet,
   getPalletByCode,
   addBoxToPallet,
+  deletePalletCascade,
 };

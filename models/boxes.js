@@ -271,15 +271,17 @@ async function deleteBoxCascade(codigo) {
 
 /** Actualiza array cajas y cantidadCajas de un pallet (útil para otros flujos) */
 async function updatePalletBoxes(palletId, cajas) {
-  await dynamoDB.update({
-    TableName: Tables.Pallets,
-    Key: { codigo: palletId },
-    UpdateExpression: 'SET cajas = :c, cantidadCajas = :n',
-    ExpressionAttributeValues: {
-      ':c': cajas,
-      ':n': cajas.length
-    }
-  }).promise();
+  await dynamoDB
+    .update({
+      TableName: Tables.Pallets,
+      Key: { codigo: palletId },
+      UpdateExpression: 'SET cajas = :c, cantidadCajas = :n',
+      ExpressionAttributeValues: {
+        ':c': cajas,
+        ':n': cajas.length,
+      },
+    })
+    .promise();
 }
 
 module.exports = {

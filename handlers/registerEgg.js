@@ -1,25 +1,20 @@
 /* ---------- imports de modelos, nada de DynamoDB directo ---------- */
-const {
-  createBox,
-  getBoxByCode,
-  boxExists,
-  assignBoxToPallet,
-} = require('../models/boxes');
+const { createBox, getBoxByCode, boxExists, assignBoxToPallet } = require('../models/boxes');
 
 const {
-  getPallets,          // ya filtra por estado / ubicación a través del GSI
+  getPallets, // ya filtra por estado / ubicación a través del GSI
   getPalletByCode,
-  getOrCreatePallet,   // crea si no existe (con la lógica de suffix)
-  addBoxToPallet,      // usa TransactWriteItems: la caja SIEMPRE queda registrada
+  getOrCreatePallet, // crea si no existe (con la lógica de suffix)
+  addBoxToPallet, // usa TransactWriteItems: la caja SIEMPRE queda registrada
 } = require('../models/pallets');
 
-const { parseBoxCode }    = require('../utils/parseBoxCode');
+const { parseBoxCode } = require('../utils/parseBoxCode');
 const { parsePalletCode } = require('../utils/parsePalletCode');
-const createApiResponse   = require('../utils/response');
+const createApiResponse = require('../utils/response');
 
 /* ---------- memoria anti-rebote ---------- */
 const recentlyProcessedBoxes = new Map();
-const PROCESSING_COOLDOWN    = 2_000;   // 2 s
+const PROCESSING_COOLDOWN = 2_000; // 2 s
 
 setInterval(() => {
   const now = Date.now();
@@ -43,20 +38,15 @@ async function findMatchingPallet(boxData) {
 /* =================================================================== */
 /* =========================  REGISTER EGG  ========================== */
 /* =================================================================== */
-const registerEggHandler = async (
-  codigoCaja,
-  _unused,
-  palletCodeFromClient,
-  scannedCodes
-) => {
+const registerEggHandler = async (codigoCaja, _unused, palletCodeFromClient, scannedCodes) => {
   /* 0️⃣  anti-rebote --------------------------------------------------*/
   const now = Date.now();
-  if (recentlyProcessedBoxes.get(codigoCaja) &&
-      now - recentlyProcessedBoxes.get(codigoCaja) < PROCESSING_COOLDOWN) {
-
+  if (
+    recentlyProcessedBoxes.get(codigoCaja) &&
+    now - recentlyProcessedBoxes.get(codigoCaja) < PROCESSING_COOLDOWN
+  ) {
     const repetida = await getBoxByCode(codigoCaja);
-    if (repetida)
-      return createApiResponse(200, '✅ Caja ya registrada', repetida);
+    if (repetida) return createApiResponse(200, '✅ Caja ya registrada', repetida);
   }
   recentlyProcessedBoxes.set(codigoCaja, now);
 
@@ -70,17 +60,18 @@ const registerEggHandler = async (
 
   /* 2️⃣  Construir objeto caja y grabar ------------------------------*/
   const boxItem = {
-    codigo       : codigoCaja,
+    codigo: codigoCaja,
     ...parsed,
-    palletId     : 'UNASSIGNED',
-    fecha_registro : new Date().toISOString(),
-    estado       : 'PACKING',
-    ubicacion    : 'PACKING',
+    palletId: 'UNASSIGNED',
+    fecha_registro: new Date().toISOString(),
+    estado: 'PACKING',
+    ubicacion: 'PACKING',
     ...(scannedCodes && { scannedCodes: JSON.stringify(scannedCodes) }),
   };
 
-  try { await createBox(boxItem); }
-  catch (e) {
+  try {
+    await createBox(boxItem);
+  } catch (e) {
     return createApiResponse(500, `❌ Error guardando caja: ${e.message}`);
   }
 
@@ -99,11 +90,10 @@ const registerEggHandler = async (
     /* 5️⃣  Añadir caja al pallet (transacción atómica) ---------------*/
     const updatedPallet = await addBoxToPallet(pallet.codigo, boxItem.codigo);
 
-    return createApiResponse(
-      200,
-      `✅ Caja asignada al pallet ${updatedPallet.codigo}`,
-      { ...boxItem, palletId: updatedPallet.codigo }
-    );
+    return createApiResponse(200, `✅ Caja asignada al pallet ${updatedPallet.codigo}`, {
+      ...boxItem,
+      palletId: updatedPallet.codigo,
+    });
   } catch (err) {
     return createApiResponse(
       400,
