@@ -1,5 +1,6 @@
 // models/pallets.js
 const { dynamoDB, Tables } = require('./index');
+const { getBoxByCode, assignBoxToPallet } = require('./boxes');
 
 const tableName = Tables.Pallets;
 
@@ -190,6 +191,68 @@ async function getOrCreatePallet(codigo, ubicacion = 'PACKING') {
   return pallet;
 }
 
+async function addBoxToPallet(palletId, boxCode) {
+    // 1) Obtener pallet
+    const pallet = await getPalletByCode(palletId);
+    if (!pallet) throw new Error(`Pallet "${palletId}" no encontrado`);
+    if (pallet.estado !== 'open') throw new Error(`Pallet "${palletId}" no está abierto`);
+    if ((pallet.cantidadCajas || 0) >= 60) throw new Error(`Pallet "${palletId}" está lleno`);
+  
+    // 2) Obtener box
+    const box = await getBoxByCode(boxCode);
+    if (!box) throw new Error(`Box "${boxCode}" no existe`);
+  
+    // 3) Validar compatibilidad calibre / formato / fecha
+    const p = parsePalletCode(pallet.codigo);          // usa función existente
+    const pDateIso = `${'20' + p.year}-W${p.weekOfYear}-${p.dayOfWeek}`;
+  
+    const boxDate = new Date(box.fecha_registro);
+    const boxWeek = getISOWeek(boxDate);
+    const boxDay  = String(boxDate.getUTCDay());
+    const boxDateIso = `${boxDate.getUTCFullYear()}-W${String(boxWeek).padStart(2,'0')}-${boxDay}`;
+  
+    if (p.caliber !== box.calibre)        throw new Error('Calibre no coincide');
+    if (p.format  !== box.formato_caja)   throw new Error('Formato no coincide');
+    if (pDateIso  !== boxDateIso)         throw new Error('Fecha no coincide');
+  
+    // 4) Actualizar pallet (evita duplicados)
+    const upd = await dynamoDB.update({
+      TableName: tableName,
+      Key: { codigo: palletId },
+      UpdateExpression:
+        'SET cajas = list_append(if_not_exists(cajas,:e), :nuevo), cantidadCajas = cantidadCajas + :inc',
+      ConditionExpression: 'attribute_not_exists(cajas) OR NOT contains(cajas, :dup)',
+      ExpressionAttributeValues: {
+        ':nuevo': [boxCode],
+        ':e': [],
+        ':inc': 1,
+        ':dup': boxCode
+      },
+      ReturnValues: 'ALL_NEW'
+    }).promise().catch(async err => {
+      if (err.code === 'ConditionalCheckFailedException') {
+        // ya estaba dentro → obtener estado actual
+        const { Item } = await dynamoDB.get({ TableName: tableName, Key: { codigo: palletId }}).promise();
+        return { Attributes: Item };
+      }
+      throw err;
+    });
+  
+    // 5) Actualizar la caja con el palletId
+    await assignBoxToPallet(boxCode, palletId);
+  
+    return upd.Attributes;
+  }
+  
+  /** Devuelve semana ISO */
+  function getISOWeek(d){
+    const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+    t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay()||7));
+    const yearStart = new Date(Date.UTC(t.getUTCFullYear(),0,1));
+    return Math.ceil(((t - yearStart) / 86400000 + 1)/7);
+  }
+  
+
 module.exports = {
   dynamoDB,
   tableName,
@@ -201,4 +264,5 @@ module.exports = {
   getOpenPallets,
   getOrCreatePallet,
   getPalletByCode,
+  addBoxToPallet,
 };

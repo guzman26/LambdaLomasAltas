@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 const createApiResponse = require('../utils/response');
-const addBoxToPallet = require('./addBoxToPallet');
+const addBoxToPalletHandler = require('./addBoxToPallet');
 const assignPallet = require('./assignPallet');
 const createPallet = require('./createPallet');
 const { parseBoxCode } = require('../utils/parseBoxCode');
@@ -109,7 +109,7 @@ const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) =>
       const pallet = await findMatchingPallet(newBox);
       palletCode = pallet?.codigo;
       console.log('🔍 Pallet encontrado automáticamente:', palletCode);
-      const updatedPallet = await addBoxToPallet(palletCode, newBox.codigo);
+      const updatedPallet = await addBoxToPalletHandler(palletCode, newBox.codigo);
       return createApiResponse(200, `✅ Caja asignada al pallet ${updatedPallet.codigo}`, {
         ...newBox,
         palletId: updatedPallet.codigo,
@@ -154,7 +154,7 @@ const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) =>
           });
         } else {
           // Si la caja no está en el pallet, proceder con la asignación normal
-          const updatedPallet = await addBoxToPallet(palletCode, newBox.codigo);
+          const updatedPallet = await addBoxToPalletHandler(palletCode, newBox.codigo);
           return createApiResponse(200, `✅ Caja asignada al pallet ${updatedPallet.codigo}`, {
             ...newBox,
             palletId: updatedPallet.codigo,
@@ -165,7 +165,7 @@ const registerEgg = async (code, _unusedPalletCode, palletCode, scannedCodes) =>
         const assignedPalletResponse = await createPallet(palletCode, 'PACKING');
         const parsed = JSON.parse(assignedPalletResponse.body);
         const assignedPalletCode = parsed?.data?.codigo;
-        const updatedPallet = await addBoxToPallet(assignedPalletCode, newBox.codigo);
+        const updatedPallet = await addBoxToPalletHandler(assignedPalletCode, newBox.codigo);
         return createApiResponse(200, `✅ Caja asignada al pallet ${updatedPallet.codigo}`, {
           ...newBox,
           palletId: updatedPallet.codigo,

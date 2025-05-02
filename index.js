@@ -21,7 +21,7 @@ const getBoxesInPallet = require('./handlers/getBoxesInPallet');
 const getBoxByCode = require('./handlers/getBoxByCode');
 const getUnassignedBoxesInPacking = require('./handlers/getUnassignedBoxesInPacking');
 const postIssue = require('./handlers/postIssue');
-const deleteBox = require('./handlers/deleteBox');
+const deleteBoxHandler = require('./handlers/deleteBox');
 const deletePallet = require('./handlers/deletePallet');
 const updateIssueStatusHandler = require('./handlers/updateIssueStatus');
 const AWS = require('aws-sdk');
@@ -246,7 +246,7 @@ const postRoutes = {
   '/admin/deleteBox': createHandler(async event => {
     const { codigo } = helpers.parseBody(event);
     helpers.validateRequired({ codigo }, ['codigo']);
-    const result = await deleteBox(codigo);
+    const result = await deleteBoxHandler(codigo);
     return createApiResponse(result.success ? 200 : 400, result.message);
   }),
 
