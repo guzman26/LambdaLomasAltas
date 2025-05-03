@@ -1,5 +1,5 @@
 const createApiResponse = require('../utils/response');
-import { getBoxesByLocation } from '../models/boxes';
+const { getBoxesByLocation } = require('../models/boxes');
 
 /**
  * Retrieves all eggs stored in the BODEGA location
