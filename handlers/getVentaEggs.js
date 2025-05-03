@@ -1,11 +1,13 @@
-const db = require('../utils/db');
-const response = require('../utils/response');
+import { getBoxesByLocation } from '../models/boxes';
+import response from '../utils/response';
 
-module.exports = async () => {
+const getVentaBoxesHandler = async () => {
   try {
-    const eggs = await db.getEggsByLocation('VENTA');
-    return response(200, eggs);
+    const boxes = await getBoxesByLocation('VENTA');
+    return response(200, boxes);
   } catch (error) {
     return response(500, 'Error al obtener huevos en VENTA', { error: error.message });
   }
 };
+
+module.exports = getVentaBoxesHandler;

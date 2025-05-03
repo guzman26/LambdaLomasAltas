@@ -1,7 +1,7 @@
 const getBoxes = require('./handlers/getBoxes');
 const getBodegaEggs = require('./handlers/getBodegaEggs');
 const getPackingEggs = require('./handlers/getPackingEggs');
-const getVentaEggs = require('./handlers/getVentaEggs');
+const getVentaBoxesHandler = require('./handlers/getVentaBoxes');
 const getEggByCodigo = require('./handlers/getEggsByCodigo');
 const getEggsByDate = require('./handlers/getEggsByDate');
 const registerEggHandler = require('./handlers/registerEgg');
@@ -91,7 +91,7 @@ const createHandler = (handlerFn, options = {}) => {
 const getRoutes = {
   '/getBodegaEggs': getBodegaEggs,
   '/getPackingData': getPackingEggs,
-  '/getVentaData': getVentaEggs,
+  '/getVentaData': createHandler(getVentaBoxesHandler),
   '/getEggsByDate': getEggsByDate,
   '/production': getBoxes,
   '/getPallets': createHandler(getPalletsHandler),
