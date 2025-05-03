@@ -65,6 +65,8 @@ async function createPallet(baseCode, ubicacion = 'PACKING') {
   return pallet;
 }
 
+const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
+
 async function getPallets({ estado, ubicacion, fechaDesde, fechaHasta } = {}) {
   // 1) Por ESTADO
   if (estado) {
@@ -100,7 +102,34 @@ async function getPallets({ estado, ubicacion, fechaDesde, fechaHasta } = {}) {
   }
 
   // 3) Sin filtros → no permitimos Scan
-  throw new Error('Debes proporcionar al menos un filtro (estado o ubicacion)');
+  /* ───────────────── 3) Fallback → últimos 5 días ──────────── */
+  const ahora   = new Date();
+  const desde   = new Date(ahora.getTime() - FIVE_DAYS_MS).toISOString();
+  const hasta   = ahora.toISOString();
+
+  const params = {
+    TableName              : tableName,
+    IndexName              : 'fechaCreacion-index',      // PK = pkFecha, SK = fechaCreacion
+    KeyConditionExpression : 'pkFecha = :pk AND fechaCreacion BETWEEN :d AND :h',
+    ExpressionAttributeValues: {
+      ':pk': 'FECHA',     // valor fijo que colocas al insertar/actualizar el pallet
+      ':d' : desde,
+      ':h' : hasta
+    },
+    ScanIndexForward: false
+  };
+
+  const pallets = [];
+  let lastKey;
+
+  do {
+    const res = await dynamoDB.query({ ...params, ExclusiveStartKey: lastKey }).promise();
+    pallets.push(...res.Items);
+    lastKey = res.LastEvaluatedKey;
+  } while (lastKey);
+
+  return pallets;
+
 }
 
 /**
