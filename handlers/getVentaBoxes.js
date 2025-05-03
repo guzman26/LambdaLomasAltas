@@ -1,5 +1,5 @@
-import { getBoxesByLocation } from '../models/boxes';
-import response from '../utils/response';
+const { getBoxesByLocation } = require('../models/boxes');
+const response = require('../utils/response');
 
 const getVentaBoxesHandler = async () => {
   try {
