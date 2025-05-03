@@ -352,4 +352,5 @@ module.exports = {
   deleteBoxCascade,
   updatePalletBoxes,
   findBoxesWithoutPallet,
+  getUnassignedBoxesInPacking,
 };

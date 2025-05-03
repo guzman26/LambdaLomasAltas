@@ -6,7 +6,7 @@ const getUnassignedBoxesInPackingHandler = async () => {
     const boxes = await getUnassignedBoxesInPacking();
     return createApiResponse(200, boxes);
   } catch (err) {
-    console.error('❌ Error getUnassignedBoxes:', err);
+    console.error('❌ Error getUnassignedBoxesInPacking:', err);
     return createApiResponse(500, err.message);
   }
 };
