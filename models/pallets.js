@@ -341,6 +341,66 @@ async function deletePalletCascade(codigo) {
   };
 }
 
+/* ─────── helpers internos ───────────────────────────────────────── */
+async function _chunkedTransactWrite(items) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += 25)
+    chunks.push(items.slice(i, i + 25));
+
+  for (const chunk of chunks) {
+    await dynamoDB.transactWrite({ TransactItems: chunk }).promise();
+  }
+}
+
+/* ─────── Mover pallet + cajas ───────────────────────────────────── */
+/**
+ * Cambia la ubicación de un pallet y de TODAS sus cajas.
+ * @param {string} codigoPallet
+ * @param {string} destino       'TRANSITO' | 'BODEGA' | 'VENTA'
+ * @returns {{ boxesUpdated: number }}
+ */
+async function movePalletWithBoxes(codigoPallet, destino) {
+  const pallet = await getPalletByCode(codigoPallet);
+  if (!pallet) throw new Error(`Pallet ${codigoPallet} no existe`);
+  if (pallet.ubicacion === destino)
+    throw new Error(`El pallet ya está en ${destino}`);
+
+  /* 1️⃣  Primer bloque de la transacción: actualizar pallet */
+  const txItems = [
+    {
+      Update: {
+        TableName: tableName,
+        Key: { codigo: codigoPallet },
+        UpdateExpression: 'SET ubicacion = :u',
+        ExpressionAttributeValues: { ':u': destino },
+      },
+    },
+  ];
+
+  /* 2️⃣  Añadir update de cada caja (quitar palletId si va a TRANSITO) */
+  const cajas = pallet.cajas || [];
+  cajas.forEach((codigoBox) => {
+    const UpdateExpression =
+      destino === 'TRANSITO'
+        ? 'SET ubicacion = :u REMOVE palletId' // se “desengancha”
+        : 'SET ubicacion = :u';
+
+    txItems.push({
+      Update: {
+        TableName: Tables.Boxes,
+        Key: { codigo: codigoBox },
+        UpdateExpression,
+        ExpressionAttributeValues: { ':u': destino },
+      },
+    });
+  });
+
+  /* 3️⃣  Ejecutar en bloques de 25 */
+  await _chunkedTransactWrite(txItems);
+
+  return { boxesUpdated: cajas.length };
+}
+
 module.exports = {
   dynamoDB,
   tableName,
@@ -354,4 +414,5 @@ module.exports = {
   getPalletByCode,
   addBoxToPallet,
   deletePalletCascade,
+  movePalletWithBoxes,
 };
