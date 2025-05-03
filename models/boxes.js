@@ -284,6 +284,58 @@ async function updatePalletBoxes(palletId, cajas) {
     .promise();
 }
 
+async function findBoxesWithoutPallet() {
+  const params = {
+    TableName: tableName,
+    IndexName: 'palletId-index',
+    KeyConditionExpression: 'palletId = :u',
+    ExpressionAttributeValues: { ':u': 'UNASSIGNED' },
+  };
+
+  const results = [];
+  let lastKey;
+
+  do {
+    const { Items, LastEvaluatedKey } = await dynamoDB
+      .query({ ...params, ExclusiveStartKey: lastKey })
+      .promise();
+
+    results.push(...Items);
+    lastKey = LastEvaluatedKey;
+  } while (lastKey);
+
+  return results;
+}
+
+async function getUnassignedBoxesInPacking () {
+  const params = {
+    TableName: tableName,
+    IndexName: 'ubicacion-index',
+    KeyConditionExpression: '#u = :packing',
+    FilterExpression: 'attribute_not_exists(palletId) OR palletId = :un',
+    ExpressionAttributeNames: { '#u': 'ubicacion' },
+    ExpressionAttributeValues: {
+      ':packing': 'PACKING',
+      ':un'     : 'UNASSIGNED'
+    }
+  };
+
+  const items = [];
+  let lastKey;
+
+  do {
+    const res = await dynamoDB
+      .query({ ...params, ExclusiveStartKey: lastKey })
+      .promise();
+
+    items.push(...res.Items);
+    lastKey = res.LastEvaluatedKey;
+  } while (lastKey);
+
+  return items;
+}
+
+
 module.exports = {
   dynamoDB,
   tableName,
@@ -299,4 +351,5 @@ module.exports = {
   boxExists,
   deleteBoxCascade,
   updatePalletBoxes,
+  findBoxesWithoutPallet,
 };

@@ -19,7 +19,7 @@ const getActivePalletsHandler = require('./handlers/getActivePallets');
 const getClosedPallets = require('./handlers/getClosedPallets');
 const getBoxesInPallet = require('./handlers/getBoxesInPallet');
 const getBoxByCode = require('./handlers/getBoxByCode');
-const getUnassignedBoxesInPacking = require('./handlers/getUnassignedBoxesInPacking');
+const getUnassignedBoxesInPackingHandler = require('./handlers/getUnassignedBoxesInPacking');
 const postIssue = require('./handlers/postIssue');
 const deleteBoxHandler = require('./handlers/deleteBox');
 const deletePallet = require('./handlers/deletePallet');
@@ -108,7 +108,7 @@ const getRoutes = {
     return createApiResponse(200, 'Egg data fetched successfully', result);
   }),
   '/getUnassignedBoxesInPacking': createHandler(async () => {
-    const result = await getUnassignedBoxesInPacking();
+    const result = await getUnassignedBoxesInPackingHandler();
     return createApiResponse(200, 'Unassigned boxes in packing fetched successfully', result);
   }),
   '/admin/dashboard': createHandler(async () => {

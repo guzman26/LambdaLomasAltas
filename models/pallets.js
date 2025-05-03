@@ -104,20 +104,20 @@ async function getPallets({ estado, ubicacion, fechaDesde, fechaHasta } = {}) {
 
   // 3) Sin filtros → no permitimos Scan
   /* ───────────────── 3) Fallback → últimos 5 días ──────────── */
-  const ahora   = new Date();
-  const desde   = new Date(ahora.getTime() - FIVE_DAYS_MS).toISOString();
-  const hasta   = ahora.toISOString();
+  const ahora = new Date();
+  const desde = new Date(ahora.getTime() - FIVE_DAYS_MS).toISOString();
+  const hasta = ahora.toISOString();
 
   const params = {
-    TableName              : tableName,
-    IndexName              : 'fechaCreacion-index',      // PK = pkFecha, SK = fechaCreacion
-    KeyConditionExpression : 'pkFecha = :pk AND fechaCreacion BETWEEN :d AND :h',
+    TableName: tableName,
+    IndexName: 'fechaCreacion-index', // PK = pkFecha, SK = fechaCreacion
+    KeyConditionExpression: 'pkFecha = :pk AND fechaCreacion BETWEEN :d AND :h',
     ExpressionAttributeValues: {
-      ':pk': 'FECHA',     // valor fijo que colocas al insertar/actualizar el pallet
-      ':d' : desde,
-      ':h' : hasta
+      ':pk': 'FECHA', // valor fijo que colocas al insertar/actualizar el pallet
+      ':d': desde,
+      ':h': hasta,
     },
-    ScanIndexForward: false
+    ScanIndexForward: false,
   };
 
   const pallets = [];
@@ -130,7 +130,6 @@ async function getPallets({ estado, ubicacion, fechaDesde, fechaHasta } = {}) {
   } while (lastKey);
 
   return pallets;
-
 }
 
 /**
