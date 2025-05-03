@@ -23,7 +23,7 @@ const getUnassignedBoxesInPackingHandler = require('./handlers/getUnassignedBoxe
 const postIssue = require('./handlers/postIssue');
 const deleteBoxHandler = require('./handlers/deleteBox');
 const deletePallet = require('./handlers/deletePallet');
-const updateIssueStatus = require('./handlers/updateIssueStatus');
+const updateIssueStatusHandler = require('./handlers/updateIssueStatus');
 const AWS = require('aws-sdk');
 const codepipeline = new AWS.CodePipeline();
 

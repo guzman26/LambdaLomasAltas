@@ -13,7 +13,7 @@ const {
  * @param {object} event – API Gateway event
  * @returns {Promise<object>} respuesta estándar { statusCode, body }
  */
-const updateIssueStatus = async (issueId, status, resolution) => {
+const updateIssueStatusHandler = async (issueId, status, resolution) => {
   try {
     /* 1️⃣  Validaciones de entrada ------------------------------------------- */
     if (!issueId || !status)
@@ -47,4 +47,4 @@ const updateIssueStatus = async (issueId, status, resolution) => {
   }
 };
 
-module.exports = updateIssueStatus;
+module.exports = updateIssueStatusHandler;
