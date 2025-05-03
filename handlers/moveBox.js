@@ -1,89 +1,56 @@
-const databaseService = require('../utils/db');
+/* handlers/moveBox.js */
+const {
+  getBoxByCode,
+  moveBox,              // update ubicacion
+} = require('../models/boxes');
+
 const createApiResponse = require('../utils/response');
 
-/**
- * Valida si un código tiene el formato correcto para una caja
- * @param {string} code - Código a validar
- * @returns {boolean} - true si es válido, false si no lo es
- */
-const validateBoxCode = code => {
-  if (!code || typeof code !== 'string') {
-    return false;
-  }
+/* ───────────────── helpers ───────────────── */
+const VALID_DESTS = ['PACKING', 'BODEGA', 'VENTA', 'TRANSITO'];
 
-  // El código de la caja debe tener 15 dígitos
-  if (code.length !== 15) {
-    return false;
-  }
+const isValidBoxCode = (code) => /^\d{15}$/.test(code);
 
-  // Debe contener solo dígitos
-  return /^\d+$/.test(code);
-};
-
-/**
- * Moves an egg box from one location to another
- * @param {string} code - Box code
- * @param {string} destination - Destination location
- * @returns {Promise<object>} API response with status and message
- */
-const moveEgg = async (code, destination) => {
-  // Validar el código de la caja
-  if (!validateBoxCode(code)) {
+/* ───────────────── handler ───────────────── */
+const moveEgg = async (codigo, destino) => {
+  /* 1) Validaciones básicas */
+  if (!isValidBoxCode(codigo)) {
     return createApiResponse(
       400,
-      `Código de caja inválido: ${code}. Debe tener 15 dígitos numéricos.`
+      `Código de caja inválido: ${codigo}. Debe tener 15 dígitos numéricos.`
     );
   }
 
-  // Validar el destino
-  const validDestinations = ['PACKING', 'BODEGA', 'VENTA', 'TRANSITO'];
-  if (!validDestinations.includes(destination)) {
+  if (!VALID_DESTS.includes(destino)) {
     return createApiResponse(
       400,
-      `Destino inválido: ${destination}. Debe ser PACKING, BODEGA, VENTA o TRANSITO.`
+      `Destino inválido: ${destino}. Debe ser PACKING, BODEGA, VENTA o TRANSITO.`
     );
   }
-
-  // Determine current and new states based on destination
-  const currentState = destination === 'BODEGA' ? 'PACKING' : 'BODEGA';
-  const newState = destination;
 
   try {
-    // Get boxes in the current state with the given code
-    const boxes = await databaseService.getEggsByState(code, currentState);
-
-    if (boxes.length === 0) {
-      return createApiResponse(
-        404,
-        `No se encontraron cajas en estado ${currentState} con código ${code}.`
-      );
+    /* 2) Recuperar la caja */
+    const box = await getBoxByCode(codigo);
+    if (!box) {
+      return createApiResponse(404, `Caja ${codigo} no encontrada`);
     }
 
-    const selectedBox = boxes[0];
-
-    // Verificar que la caja no esté ya en el destino
-    if (selectedBox.ubicacion === destination) {
-      return createApiResponse(400, `La caja ${code} ya se encuentra en ${destination}.`);
+    if (box.ubicacion === destino) {
+      return createApiResponse(400, `La caja ${codigo} ya se encuentra en ${destino}.`);
     }
 
-    // Update egg state and record the movement
-    const updatedEgg = await databaseService.updateEggState(
-      selectedBox.codigo,
-      selectedBox.idCaja,
-      newState,
-      destination
+    /* 3) Actualizar ubicación mediante el modelo */
+    const updated = await moveBox(codigo, destino);
+
+    return createApiResponse(
+      200,
+      `Caja ${codigo} movida a ${destino}`,
+      updated
     );
-
-    return createApiResponse(200, {
-      message: `Caja ${selectedBox.idCaja} movida a ${newState}`,
-      movementHistory: updatedEgg.historialMovimientos,
-    });
-  } catch (error) {
-    console.error(`❌ Error moviendo caja: ${error.message}`, error);
-    return createApiResponse(500, `Error al mover caja: ${error.message}`);
+  } catch (err) {
+    console.error('❌ Error moviendo caja:', err);
+    return createApiResponse(500, `Error al mover caja: ${err.message}`);
   }
 };
 
-module.exports = {
-  moveEgg,
-};
+module.exports = { moveEgg };
