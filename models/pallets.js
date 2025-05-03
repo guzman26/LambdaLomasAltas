@@ -51,6 +51,7 @@ async function createPallet(baseCode, ubicacion = 'PACKING') {
     codigo,
     baseCode,
     suffix,
+    pkFecha: 'FECHA',
     fechaCalibreFormato: `${parts.dayOfWeek}${parts.weekOfYear}${parts.year}${parts.shift}${parts.caliber}${parts.format}`,
     estado: 'open',
     cajas: [],
