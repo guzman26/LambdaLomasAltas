@@ -23,7 +23,7 @@ const getUnassignedBoxesInPackingHandler = require('./handlers/getUnassignedBoxe
 const postIssue = require('./handlers/postIssue');
 const deleteBoxHandler = require('./handlers/deleteBox');
 const deletePallet = require('./handlers/deletePallet');
-const updateIssueStatusHandler = require('./handlers/updateIssueStatus');
+const updateIssueStatus = require('./handlers/updateIssueStatus');
 const AWS = require('aws-sdk');
 const codepipeline = new AWS.CodePipeline();
 
@@ -217,7 +217,7 @@ const postRoutes = {
   '/admin/updateIssueStatus': createHandler(async event => {
     const { issueId, status, resolution } = helpers.parseBody(event);
     helpers.validateRequired({ issueId, status }, ['issueId', 'status']);
-    const result = await updateIssueStatusHandler(issueId, status, resolution);
+    const result = await updateIssueStatus(issueId, status, resolution);
     return createApiResponse(200, 'Issue status updated successfully', result);
   }),
 

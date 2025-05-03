@@ -1,103 +1,50 @@
-const AWS = require('aws-sdk');
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
+/* eslint-disable consistent-return */
 const createApiResponse = require('../utils/response');
-
-const ISSUES_TABLE = 'Issues';
-const ADMIN_LOGS_TABLE = 'AdminLogs';
-
-/**
- * Updates the status of an issue
- * @param {string} issueId - The ID of the issue to update
- * @param {string} status - The new status (pendiente, en_proceso, resuelto)
- * @param {string} resolution - Optional resolution comment
- * @returns {Promise<Object>} Updated issue data
- */
-async function updateIssueStatus(issueId, status, resolution = null) {
-  try {
-    if (!['PENDING', 'IN_PROGRESS', 'RESOLVED'].includes(status)) {
-      throw new Error('Estado inválido. Debe ser PENDING, IN_PROGRESS o RESOLVED');
-    }
-
-    const params = {
-      TableName: ISSUES_TABLE,
-      Key: { IssueNumber: issueId },
-      UpdateExpression: 'SET #estado = :status, lastUpdated = :timestamp',
-      ExpressionAttributeNames: {
-        '#estado': 'estado',
-      },
-      ExpressionAttributeValues: {
-        ':status': status,
-        ':timestamp': new Date().toISOString(),
-      },
-      ReturnValues: 'ALL_NEW',
-    };
-
-    // Si hay comentario de resolución, lo añadimos
-    if (resolution && status === 'RESOLVED') {
-      params.UpdateExpression += ', resolution = :resolution';
-      params.ExpressionAttributeValues[':resolution'] = resolution;
-    }
-
-    const result = await dynamoDB.update(params).promise();
-    return result.Attributes;
-  } catch (error) {
-    console.error(`❌ Error al actualizar estado del problema ${issueId}:`, error);
-    throw new Error(`Error al actualizar estado del problema: ${error.message}`);
-  }
-}
+const {
+  getIssue,
+  updateIssue,      // ← modelo que realiza el `Update` en DynamoDB
+} = require('../models/issues');
 
 /**
- * Lambda handler for updating issue status
- * @param {Object} event - API Gateway event
- * @returns {Promise<Object>} API response
+ * Cambia el estado (y la resolución opcional) de una incidencia.
+ * Se apoya exclusivamente en la capa de modelos; aquí solo hay
+ * validación, parsing de la petición y formato de la respuesta.
+ *
+ * @param {object} event – API Gateway event
+ * @returns {Promise<object>} respuesta estándar { statusCode, body }
  */
-exports.handler = async event => {
+const updateIssueStatus = async (issueId, status, resolution) => {
   try {
-    console.log('Received event:', JSON.stringify(event, null, 2));
+    /* 1️⃣  Validaciones de entrada ------------------------------------------- */
+    if (!issueId || !status)
+      return createApiResponse(400, '⚠️ Se requieren issueId y status');
 
-    // Get issueId from path parameters or body
-    let issueId;
-    if (event.pathParameters && event.pathParameters.issueId) {
-      // Path parameter from our custom routing
-      issueId = event.pathParameters.issueId;
-    } else if (event.path) {
-      // Extract from path if not in path parameters
-      const pathParts = event.path.split('/');
-      const issueIdIndex = pathParts.findIndex(part => part === 'issues') + 1;
-      if (issueIdIndex > 0 && issueIdIndex < pathParts.length) {
-        issueId = pathParts[issueIdIndex];
-      }
-    }
+    const validStatuses = ['PENDING', 'IN_PROGRESS', 'RESOLVED'];
+    if (!validStatuses.includes(status))
+      return createApiResponse(400, `⚠️ Estado inválido. Valores permitidos: ${validStatuses.join(', ')}`);
 
-    // Parse the request body
-    const requestBody = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {};
+    /* 3️⃣  Verificar que exista el issue ------------------------------------- */
+    const issue = await getIssue(issueId);
+    if (!issue) return createApiResponse(404, `Incidencia ${issueId} no encontrada`);
 
-    // Extract status and resolution from body
-    const { status, resolution } = requestBody;
+    /* 4️⃣  Construir objeto de actualización --------------------------------- */
+    const updates = { estado: status };
+    if (status === 'RESOLVED' && resolution) updates.resolution = resolution.trim();
 
-    console.log(`Updating issue ${issueId} with status: ${status}`);
+    /* 5️⃣  Persistir con el modelo ------------------------------------------- */
+    const updated = await updateIssue(issueId, updates);
 
-    // Validate required fields
-    if (!issueId || !status) {
-      return createApiResponse(400, 'Faltan campos requeridos: issueId y status son obligatorios');
-    }
-
-    // Update the issue
-    const updatedIssue = await updateIssueStatus(issueId, status, resolution);
-
+    /* 6️⃣  Responder ---------------------------------------------------------- */
     return createApiResponse(
       200,
-      'Estado de la incidencia actualizado correctamente',
-      updatedIssue
+      '✅ Estado de la incidencia actualizado correctamente',
+      updated
     );
-  } catch (error) {
-    console.error('❌ Error en Lambda handler para actualizar estado de incidencia:', error);
-    return createApiResponse(
-      error.message.includes('inválido') ? 400 : 500,
-      `Error: ${error.message}`
-    );
+
+  } catch (err) {
+    console.error('❌ Error en handler updateIssueStatus:', err);
+    return createApiResponse(500, `Error interno: ${err.message}`);
   }
 };
 
-// Export for testing and reuse
 module.exports = updateIssueStatus;
