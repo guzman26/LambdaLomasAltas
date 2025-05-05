@@ -1,6 +1,6 @@
 /* eslint-disable consistent-return */
 const createApiResponse = require('../utils/response');
-const { updateBox }      = require('../models/boxes');   // ← usa el modelo, no DynamoDB directo
+const { updateBox } = require('../models/boxes'); // ← usa el modelo, no DynamoDB directo
 
 /**
  * Actualiza (o crea) la descripción libre que tiene una caja.
@@ -21,11 +21,7 @@ const updateBoxDescription = async (codigo, newDescription) => {
   try {
     const updated = await updateBox(codigo, { descripcion: newDescription.trim() });
 
-    return createApiResponse(
-      200,
-      '✅ Descripción actualizada correctamente',
-      updated
-    );
+    return createApiResponse(200, '✅ Descripción actualizada correctamente', updated);
   } catch (err) {
     console.error('❌ Error al actualizar descripción:', err);
     const status = /no encontrado/i.test(err.message) ? 404 : 500;

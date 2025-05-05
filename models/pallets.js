@@ -344,8 +344,7 @@ async function deletePalletCascade(codigo) {
 /* ─────── helpers internos ───────────────────────────────────────── */
 async function _chunkedTransactWrite(items) {
   const chunks = [];
-  for (let i = 0; i < items.length; i += 25)
-    chunks.push(items.slice(i, i + 25));
+  for (let i = 0; i < items.length; i += 25) chunks.push(items.slice(i, i + 25));
 
   for (const chunk of chunks) {
     await dynamoDB.transactWrite({ TransactItems: chunk }).promise();
@@ -362,8 +361,7 @@ async function _chunkedTransactWrite(items) {
 async function movePalletWithBoxes(codigoPallet, destino) {
   const pallet = await getPalletByCode(codigoPallet);
   if (!pallet) throw new Error(`Pallet ${codigoPallet} no existe`);
-  if (pallet.ubicacion === destino)
-    throw new Error(`El pallet ya está en ${destino}`);
+  if (pallet.ubicacion === destino) throw new Error(`El pallet ya está en ${destino}`);
 
   /* 1️⃣  Primer bloque de la transacción: actualizar pallet */
   const txItems = [
@@ -379,7 +377,7 @@ async function movePalletWithBoxes(codigoPallet, destino) {
 
   /* 2️⃣  Añadir update de cada caja (quitar palletId si va a TRANSITO) */
   const cajas = pallet.cajas || [];
-  cajas.forEach((codigoBox) => {
+  cajas.forEach(codigoBox => {
     const UpdateExpression =
       destino === 'TRANSITO'
         ? 'SET ubicacion = :u REMOVE palletId' // se “desengancha”

@@ -1,51 +1,57 @@
-const AWS = require('aws-sdk');
+// handlers/getClosedPallets.js
+const { dynamoDB } = require('../models/pallets'); // reutilizamos el cliente
+const { tableName } = require('../models/pallets'); // nombre real de la tabla
 const createApiResponse = require('../utils/response');
 
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
-
 /**
- * Fetch all pallets with estado = "closed" and a given ubicacion (attribute).
- * Example: If you pass "PACKING", only returns closed pallets in PACKING.
+ * Devuelve los pallets cerrados (estado = "closed") en una ubicación dada
+ * usando solo QUERY sobre el GSI estado‑fechaCreacion‑GSI.
  *
- * @param {string} ubicacionValue - e.g. "PACKING"
- * @returns {Promise<object>} API-style response
+ * @param {string} ubicacionValue  "PACKING" | "BODEGA" | "VENTA" | etc.
  */
-const getClosedPalletsByUbicacion = async ubicacionValue => {
-  // Optionally uppercase or sanitize the input
-  const location = ubicacionValue.toUpperCase();
+module.exports = async (ubicacionValue = '') => {
+  const location = (ubicacionValue || '').toUpperCase().trim();
+  if (!location) return createApiResponse(400, 'ubicacion es requerida');
 
   try {
-    // We keep #ubicacion as a field name reference in Dynamo,
-    // but the actual value is dynamic
     const params = {
-      TableName: 'Pallets',
-      FilterExpression: '#estado = :closed AND #ubicacion = :loc',
+      TableName: tableName,
+      IndexName: 'estado-fechaCreacion-GSI',
+      KeyConditionExpression: '#e = :closed',
+      FilterExpression: '#u = :loc',
       ExpressionAttributeNames: {
-        '#estado': 'estado',
-        '#ubicacion': 'ubicacion', // The table attribute name
+        '#e': 'estado',
+        '#u': 'ubicacion',
       },
       ExpressionAttributeValues: {
         ':closed': 'closed',
         ':loc': location,
       },
+      ScanIndexForward: false, // opcional: últimos primero
     };
 
-    // Scan for matching items
-    const result = await dynamoDB.scan(params).promise();
+    const items = [];
+    let lastKey;
 
-    // Return success with the found items
+    do {
+      const { Items, LastEvaluatedKey } = await dynamoDB
+        .query({ ...params, ExclusiveStartKey: lastKey })
+        .promise();
+
+      items.push(...Items);
+      lastKey = LastEvaluatedKey;
+    } while (lastKey);
+
     return createApiResponse(
       200,
-      `✅ Found ${result.Items.length} closed pallet(s) in ${location}`,
-      result.Items
+      `✅ Encontrados ${items.length} pallet(s) cerrados en ${location}`,
+      items
     );
-  } catch (error) {
-    // Return error with status 500
+  } catch (err) {
+    console.error('getClosedPallets error:', err);
     return createApiResponse(
       500,
-      `❌ Error fetching closed pallets for ubicacion=${ubicacionValue}: ${error.message}`
+      `❌ Error al obtener pallets cerrados en ${location}: ${err.message}`
     );
   }
 };
-
-module.exports = getClosedPalletsByUbicacion;

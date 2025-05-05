@@ -307,7 +307,7 @@ async function findBoxesWithoutPallet() {
   return results;
 }
 
-async function getUnassignedBoxesInPacking () {
+async function getUnassignedBoxesInPacking() {
   const params = {
     TableName: tableName,
     IndexName: 'ubicacion-index',
@@ -316,17 +316,15 @@ async function getUnassignedBoxesInPacking () {
     ExpressionAttributeNames: { '#u': 'ubicacion' },
     ExpressionAttributeValues: {
       ':packing': 'PACKING',
-      ':un'     : 'UNASSIGNED'
-    }
+      ':un': 'UNASSIGNED',
+    },
   };
 
   const items = [];
   let lastKey;
 
   do {
-    const res = await dynamoDB
-      .query({ ...params, ExclusiveStartKey: lastKey })
-      .promise();
+    const res = await dynamoDB.query({ ...params, ExclusiveStartKey: lastKey }).promise();
 
     items.push(...res.Items);
     lastKey = res.LastEvaluatedKey;
@@ -334,7 +332,6 @@ async function getUnassignedBoxesInPacking () {
 
   return items;
 }
-
 
 module.exports = {
   dynamoDB,

@@ -1,13 +1,10 @@
 /* ---------- imports de modelos, nada de DynamoDB directo ---------- */
 const {
   getPalletByCode,
-  updatePalletBoxes      // util que ya expone tu modelo de pallets
+  updatePalletBoxes, // util que ya expone tu modelo de pallets
 } = require('../models/pallets');
 
-const {
-  getBoxByCode,
-  updateBox
-} = require('../models/boxes');
+const { getBoxByCode, updateBox } = require('../models/boxes');
 
 /**
  * Remueve una caja de un pallet:
@@ -16,10 +13,9 @@ const {
  *   • Devuelve { updatedPallet, updatedBox }
  */
 const removeBoxFromPallet = async (palletId, boxCode) => {
-
   /* 1️⃣  Leer y validar pallet -------------------------------------------- */
   const pallet = await getPalletByCode(palletId);
-  if (!pallet)          throw new Error(`Pallet "${palletId}" no existe`);
+  if (!pallet) throw new Error(`Pallet "${palletId}" no existe`);
 
   // CUESTIONAR: ¿Por qué no se valida que el pallet esté abierto?
   // if (pallet.estado !== 'open')
@@ -27,7 +23,7 @@ const removeBoxFromPallet = async (palletId, boxCode) => {
 
   /* 2️⃣  Leer y validar box ------------------------------------------------ */
   const box = await getBoxByCode(boxCode);
-  if (!box)                           throw new Error(`Caja "${boxCode}" no existe`);
+  if (!box) throw new Error(`Caja "${boxCode}" no existe`);
   if (box.palletId !== palletId)
     throw new Error(`Caja "${boxCode}" no pertenece al pallet "${palletId}"`);
 
@@ -37,8 +33,8 @@ const removeBoxFromPallet = async (palletId, boxCode) => {
 
   /* 4️⃣  Actualizar box: quitamos palletId y movemos a PACKING ------------- */
   const updatedBox = await updateBox(boxCode, {
-    palletId  : 'UNASSIGNED',
-    ubicacion : 'PACKING'
+    palletId: 'UNASSIGNED',
+    ubicacion: 'PACKING',
   });
 
   return { updatedPallet, updatedBox };

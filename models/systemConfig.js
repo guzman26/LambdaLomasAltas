@@ -6,7 +6,7 @@
  */
 const { dynamoDB, Tables } = require('./index');
 
-const tableName = Tables.SystemConfig;   // ← viene de tu archivo index.js
+const tableName = Tables.SystemConfig; // ← viene de tu archivo index.js
 
 /* ─────────────── CRUD ──────────────────────────────────────────────────── */
 
@@ -18,10 +18,12 @@ const tableName = Tables.SystemConfig;   // ← viene de tu archivo index.js
 async function setSystemConfig(configKey, configValue) {
   if (!configKey) throw new Error('configKey es obligatorio');
 
-  await dynamoDB.put({
-    TableName : tableName,
-    Item      : { configKey, configValue }
-  }).promise();
+  await dynamoDB
+    .put({
+      TableName: tableName,
+      Item: { configKey, configValue },
+    })
+    .promise();
 
   console.log('[SystemConfig] ✅ Guardado', configKey);
 }
@@ -34,18 +36,20 @@ async function setSystemConfig(configKey, configValue) {
 async function getSystemConfig(configKey) {
   if (!configKey) throw new Error('configKey es obligatorio');
 
-  const { Item } = await dynamoDB.get({
-    TableName : tableName,
-    Key       : { configKey }
-  }).promise();
+  const { Item } = await dynamoDB
+    .get({
+      TableName: tableName,
+      Key: { configKey },
+    })
+    .promise();
 
   return Item ? Item.configValue : null;
 }
 
 /* ─────────────── exports ──────────────────────────────────────────────── */
 module.exports = {
-  dynamoDB,       // re‑export por consistencia con demás modelos
+  dynamoDB, // re‑export por consistencia con demás modelos
   tableName,
   setSystemConfig,
-  getSystemConfig
+  getSystemConfig,
 };

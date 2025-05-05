@@ -2,7 +2,7 @@
 const createApiResponse = require('../utils/response');
 const {
   getIssue,
-  updateIssue,      // ← modelo que realiza el `Update` en DynamoDB
+  updateIssue, // ← modelo que realiza el `Update` en DynamoDB
 } = require('../models/issues');
 
 /**
@@ -16,12 +16,14 @@ const {
 const updateIssueStatusHandler = async (issueId, status, resolution) => {
   try {
     /* 1️⃣  Validaciones de entrada ------------------------------------------- */
-    if (!issueId || !status)
-      return createApiResponse(400, '⚠️ Se requieren issueId y status');
+    if (!issueId || !status) return createApiResponse(400, '⚠️ Se requieren issueId y status');
 
     const validStatuses = ['PENDING', 'IN_PROGRESS', 'RESOLVED'];
     if (!validStatuses.includes(status))
-      return createApiResponse(400, `⚠️ Estado inválido. Valores permitidos: ${validStatuses.join(', ')}`);
+      return createApiResponse(
+        400,
+        `⚠️ Estado inválido. Valores permitidos: ${validStatuses.join(', ')}`
+      );
 
     /* 3️⃣  Verificar que exista el issue ------------------------------------- */
     const issue = await getIssue(issueId);
@@ -35,12 +37,7 @@ const updateIssueStatusHandler = async (issueId, status, resolution) => {
     const updated = await updateIssue(issueId, updates);
 
     /* 6️⃣  Responder ---------------------------------------------------------- */
-    return createApiResponse(
-      200,
-      '✅ Estado de la incidencia actualizado correctamente',
-      updated
-    );
-
+    return createApiResponse(200, '✅ Estado de la incidencia actualizado correctamente', updated);
   } catch (err) {
     console.error('❌ Error en handler updateIssueStatus:', err);
     return createApiResponse(500, `Error interno: ${err.message}`);

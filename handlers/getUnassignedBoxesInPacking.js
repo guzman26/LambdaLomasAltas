@@ -1,5 +1,5 @@
 const { getUnassignedBoxesInPacking } = require('../models/boxes');
-const createApiResponse               = require('../utils/response');
+const createApiResponse = require('../utils/response');
 
 const getUnassignedBoxesInPackingHandler = async () => {
   try {

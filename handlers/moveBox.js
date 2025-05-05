@@ -1,7 +1,7 @@
 /* handlers/moveBox.js */
 const {
   getBoxByCode,
-  moveBox,              // update ubicacion
+  moveBox, // update ubicacion
 } = require('../models/boxes');
 
 const createApiResponse = require('../utils/response');
@@ -9,7 +9,7 @@ const createApiResponse = require('../utils/response');
 /* ───────────────── helpers ───────────────── */
 const VALID_DESTS = ['PACKING', 'BODEGA', 'VENTA', 'TRANSITO'];
 
-const isValidBoxCode = (code) => /^\d{15}$/.test(code);
+const isValidBoxCode = code => /^\d{15}$/.test(code);
 
 /* ───────────────── handler ───────────────── */
 const moveEgg = async (codigo, destino) => {
@@ -42,11 +42,7 @@ const moveEgg = async (codigo, destino) => {
     /* 3) Actualizar ubicación mediante el modelo */
     const updated = await moveBox(codigo, destino);
 
-    return createApiResponse(
-      200,
-      `Caja ${codigo} movida a ${destino}`,
-      updated
-    );
+    return createApiResponse(200, `Caja ${codigo} movida a ${destino}`, updated);
   } catch (err) {
     console.error('❌ Error moviendo caja:', err);
     return createApiResponse(500, `Error al mover caja: ${err.message}`);

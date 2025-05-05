@@ -43,9 +43,35 @@ module.exports = async event => {
     }
 
     // 4) Sin filtros → scan (puedes paginar en prod)
-    const { dynamoDB } = require('../models/boxes'); // re-usar el mismo cliente
-    const result = await dynamoDB.scan({ TableName: tableName }).promise();
-    return createApiResponse(200, result.Items);
+    const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+    const ahora = new Date();
+    const desde = new Date(ahora.getTime() - THREE_DAYS_MS).toISOString();
+    const hasta = ahora.toISOString();
+
+    const params = {
+      TableName: tableName,
+      IndexName: 'pkTipo-fecha-creacion-index',
+      KeyConditionExpression: 'pkTipo = :box AND fecha_creacion BETWEEN :d AND :h',
+      ExpressionAttributeNames: { '#ts': 'fecha_creacion' },
+      ExpressionAttributeValues: {
+        ':box': 'BOX',
+        ':d': desde,
+        ':h': hasta,
+      },
+      ScanIndexForward: false,
+    };
+
+    const items = [];
+    let lastKey;
+    do {
+      const { Items, LastEvaluatedKey } = await dynamoDB
+        .query({ ...params, ExclusiveStartKey: lastKey })
+        .promise();
+      items.push(...Items);
+      lastKey = LastEvaluatedKey;
+    } while (lastKey);
+
+    return createApiResponse(200, items);
   } catch (err) {
     console.error('Error en getBoxes handler:', err);
     return createApiResponse(500, `Error al obtener boxes: ${err.message}`);

@@ -2,7 +2,7 @@ const { getPalletByCode, movePalletWithBoxes } = require('../models/pallets');
 const createApiResponse = require('../utils/response');
 
 /* helpers */
-const isValidPalletCode = (c) => /^\d{12}$/.test(c);
+const isValidPalletCode = c => /^\d{12}$/.test(c);
 const DESTS = ['TRANSITO', 'BODEGA', 'VENTA'];
 
 async function movePallet(codigo, destino) {
@@ -10,8 +10,7 @@ async function movePallet(codigo, destino) {
   if (!isValidPalletCode(codigo))
     return createApiResponse(400, `Código de pallet inválido: ${codigo} (12 dígitos).`);
 
-  if (!DESTS.includes(destino))
-    return createApiResponse(400, `Destino inválido: ${destino}.`);
+  if (!DESTS.includes(destino)) return createApiResponse(400, `Destino inválido: ${destino}.`);
 
   try {
     const pallet = await getPalletByCode(codigo);
