@@ -1,3 +1,6 @@
+const { dynamoDB, Tables } = require('../../models/index');
+
+
 exports.getIssues = async ({ status, startDate, endDate } = {}) => {
     // 1) Filtrar por estado (obligatorio para evitar scan)
     const pkEstado = status || 'PENDING';           // default

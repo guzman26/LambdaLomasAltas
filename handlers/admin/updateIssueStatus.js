@@ -1,3 +1,5 @@
+const { dynamoDB, Tables } = require('../../models/index');
+
 async function updateIssueStatus(issueId, status, resolution = null) {
     try {
       if (!['PENDING', 'IN_PROGRESS', 'RESOLVED'].includes(status)) {
@@ -5,7 +7,7 @@ async function updateIssueStatus(issueId, status, resolution = null) {
       }
   
       const params = {
-        TableName: ISSUES_TABLE,
+        TableName: Tables.Issues,
         Key: { IssueNumber: issueId },
         UpdateExpression: 'SET #s = :status, lastUpdated = :ts',
         ExpressionAttributeNames: {

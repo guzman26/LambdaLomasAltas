@@ -1,5 +1,5 @@
 // admin/getSystemDashboard.js (fragmento)
-const { dynamoDB, Tables } = require('../models/index');
+const { dynamoDB, Tables } = require('../../models/index');
 const BOXES   = Tables.Boxes;
 const PALLETS = Tables.Pallets;
 const ISSUES  = Tables.Issues;
