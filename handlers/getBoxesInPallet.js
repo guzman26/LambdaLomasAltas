@@ -1,5 +1,6 @@
 const AWS = require('aws-sdk');
 const createApiResponse = require('../utils/response');
+const Tables = require('../models/index');
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const TABLE_NAME = Tables.Boxes;
