@@ -50,7 +50,7 @@ module.exports = async event => {
     const params = {
       TableName: Tables.Boxes,
       IndexName: 'pkTipo-fecha-creacion-index',
-      KeyConditionExpression: 'pkTipo = :box AND fecha_creacion BETWEEN :d AND :h',
+      KeyConditionExpression: 'pkTipo = :box AND #ts BETWEEN :d AND :h',
       ExpressionAttributeNames: { '#ts': 'fecha_creacion' },
       ExpressionAttributeValues: {
         ':box': 'BOX',
