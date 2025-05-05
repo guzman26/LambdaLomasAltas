@@ -1,7 +1,7 @@
 const { dynamoDB, Tables } = require('../../models/index');
 
 
-exports.getIssues = async ({ status, startDate, endDate } = {}) => {
+const getIssues = async ({ status, startDate, endDate } = {}) => {
     try {
         const params = {
             TableName: Tables.Issues,
@@ -35,7 +35,8 @@ exports.getIssues = async ({ status, startDate, endDate } = {}) => {
           return result.Items || [];
         } catch (error) {
           console.error('❌ Error al obtener problemas reportados:', error);
-          throw new Error(`Error al obtener problemas: ${error.message}`);
-        }
-  };
-  
+    throw new Error(`Error al obtener problemas: ${error.message}`);
+  }
+};
+
+module.exports = { getIssues };
