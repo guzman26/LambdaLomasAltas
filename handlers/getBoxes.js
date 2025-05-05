@@ -4,9 +4,10 @@ const {
   getBoxesByLocation,
   getBoxesByPallet,
   boxExists,
-  tableName, // solo para logging o métricas; no se usa el cliente directo
 } = require('../models/boxes');
-
+const AWS = require('aws-sdk');
+const dynamoDB = new AWS.DynamoDB.DocumentClient();
+const Tables = require('../models/tables');
 const createApiResponse = require('../utils/response');
 
 /**
@@ -49,7 +50,7 @@ module.exports = async event => {
     const hasta = ahora.toISOString();
 
     const params = {
-      TableName: tableName,
+      TableName: Tables.Boxes,
       IndexName: 'pkTipo-fecha-creacion-index',
       KeyConditionExpression: 'pkTipo = :box AND fecha_creacion BETWEEN :d AND :h',
       ExpressionAttributeNames: { '#ts': 'fecha_creacion' },
