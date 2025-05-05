@@ -32,6 +32,7 @@ const getIssues = async ({ status, startDate, endDate } = {}) => {
           }
       
           const result = await dynamoDB.scan(params).promise();
+          console.log('result', result);
           return result.Items || [];
         } catch (error) {
           console.error('❌ Error al obtener problemas reportados:', error);
