@@ -5,9 +5,7 @@ const {
   getBoxesByPallet,
   boxExists,
 } = require('../models/boxes');
-const AWS = require('aws-sdk');
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
-const Tables = require('../models/index');
+const { dynamoDB, Tables } = require('../models/index');
 const createApiResponse = require('../utils/response');
 
 /**
