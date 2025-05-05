@@ -5,13 +5,14 @@ const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const { getSystemConfig, setSystemConfig } = require('../models/systemConfig');
 const createApiResponse = require('../utils/response');
+const Tables = require('../models/tables');
 
 // Tabla de registros de operaciones administrativas
-const ADMIN_LOGS_TABLE = 'AdminLogs';
-const ISSUES_TABLE = 'Issues';
-const EGG_TABLE = 'Boxes';
-const PALLETS_TABLE = 'Pallets';
-const CONFIG_TABLE = 'SystemConfig';
+const ADMIN_LOGS_TABLE = Tables.AdminLogs;
+const ISSUES_TABLE = Tables.Issues;
+const EGG_TABLE = Tables.Boxes;
+const PALLETS_TABLE = Tables.Pallets;
+const CONFIG_TABLE = Tables.SystemConfig;
 
 /**
  * Obtiene un dashboard con métricas clave del sistema
