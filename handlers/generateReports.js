@@ -4,12 +4,13 @@
 const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const createApiResponse = require('../utils/response');
+const Tables = require('../models/index');
 
 // Tablas de la base de datos
-const EGG_TABLE = 'Boxes';
-const PALLETS_TABLE = 'Pallets';
-const ISSUES_TABLE = 'Issues';
-const ADMIN_LOGS_TABLE = 'AdminLogs';
+const EGG_TABLE = Tables.Boxes;
+const PALLETS_TABLE = Tables.Pallets;
+const ISSUES_TABLE = Tables.Issues;
+const ADMIN_LOGS_TABLE = Tables.AdminLogs;
 
 /**
  * Genera un informe de producción por fecha

@@ -1,6 +1,6 @@
 // handlers/getClosedPallets.js
 const { dynamoDB } = require('../models/pallets'); // reutilizamos el cliente
-const { tableName } = require('../models/pallets'); // nombre real de la tabla
+const Tables = require('../models/index');
 const createApiResponse = require('../utils/response');
 
 /**
@@ -15,7 +15,7 @@ module.exports = async (ubicacionValue = '') => {
 
   try {
     const params = {
-      TableName: tableName,
+      TableName: Tables.Pallets,
       IndexName: 'estado-fechaCreacion-GSI',
       KeyConditionExpression: '#e = :closed',
       FilterExpression: '#u = :loc',
