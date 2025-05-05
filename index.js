@@ -28,13 +28,13 @@ const AWS = require('aws-sdk');
 const codepipeline = new AWS.CodePipeline();
 
 const {
-  getSystemDashboard,
-  getIssues,
   auditAndFixData,
   backupData,
-  updateIssueStatus,
   deleteIssue,
 } = require('./handlers/admin');
+const { getSystemDashboard } = require('./handlers/admin/getSystemDashboard');
+const { getIssues } = require('./handlers/admin/getIssues');
+const { updateIssueStatus } = require('./handlers/admin/updateIssueStatus');
 const { generateReportHandler } = require('./handlers/generateReports');
 const {
   generateExcelReportHandler,
