@@ -65,6 +65,7 @@ const registerEggHandler = async (codigoCaja, _unused, palletCodeFromClient, sca
     palletId: 'UNASSIGNED',
     fecha_registro: new Date().toISOString(),
     estado: 'PACKING',
+    pkTipo: 'BOX',
     ubicacion: 'PACKING',
     ...(scannedCodes && { scannedCodes: JSON.stringify(scannedCodes) }),
   };
