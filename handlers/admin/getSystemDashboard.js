@@ -85,9 +85,9 @@ exports.getSystemDashboard = async () => {
         huevos_en_venta  : venta,
         total_pallets    : pallets,
         issues_pendientes: pendingIssues,
-        pallet_activo: activePallet,
+        pallets_activos: activePallet,
       },
-      config: { pallet_activo: activePallet },
+      config: { pallets_activos: activePallet },
     };
   } catch (err) {
     throw new Error(`Dashboard error: ${err.message}`);
