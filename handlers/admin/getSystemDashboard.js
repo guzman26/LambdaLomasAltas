@@ -3,25 +3,7 @@ const { dynamoDB, Tables } = require('../../models/index');
 const BOXES   = Tables.Boxes;
 const PALLETS = Tables.Pallets;
 const ISSUES  = Tables.Issues;
-const systemConfig = require('../../models/systemConfig');
-const { getSystemConfig } = systemConfig;
 
-// Fallback implementation if getSystemConfig is not defined
-async function fallbackGetSystemConfig(configKey) {
-  if (!configKey) throw new Error('configKey es obligatorio');
-
-  const { Item } = await dynamoDB
-    .get({
-      TableName: Tables.SystemConfig,
-      Key: { configKey },
-    })
-    .promise();
-
-  return Item ? Item.configValue : null;
-}
-
-// Use the imported function or fallback to our implementation
-const getConfigValue = getSystemConfig || fallbackGetSystemConfig;
 
 async function _countBoxesByUbicacion(ubicacion) {
   const { Count } = await dynamoDB.query({
@@ -81,7 +63,6 @@ exports.getSystemDashboard = async () => {
       _countBoxesByUbicacion('VENTA'),
       _countAllPallets(),
       _countPendingIssues(),
-      getConfigValue('ACTIVE_PALLET_CODE'),
     ]);
 
     return {
