@@ -50,7 +50,7 @@ async function _countPendingIssues() {
 
 async function _getActivePallet() {
     const { Count } = await dynamoDB.query({
-        TableName: Pallets,
+        TableName: PALLETS,
         IndexName: 'estado-index',     // PK = estado
         KeyConditionExpression: '#s = :p',
         ExpressionAttributeNames : { '#s': 'estado' },
