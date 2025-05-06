@@ -48,6 +48,18 @@ async function _countPendingIssues() {
   return Count;
 }
 
+async function _getActivePallet() {
+    const { Count } = await dynamoDB.query({
+        TableName: Pallets,
+        IndexName: 'estado-index',     // PK = estado
+        KeyConditionExpression: '#s = :p',
+        ExpressionAttributeNames : { '#s': 'estado' },
+        ExpressionAttributeValues: { ':p':'open' },
+        Select: 'COUNT',
+      }).promise();
+      return Count;
+}
+
 exports.getSystemDashboard = async () => {
   try {
     const [
@@ -63,6 +75,7 @@ exports.getSystemDashboard = async () => {
       _countBoxesByUbicacion('VENTA'),
       _countAllPallets(),
       _countPendingIssues(),
+      _getActivePallet(),
     ]);
 
     return {
@@ -72,6 +85,7 @@ exports.getSystemDashboard = async () => {
         huevos_en_venta  : venta,
         total_pallets    : pallets,
         issues_pendientes: pendingIssues,
+        pallet_activo: activePallet,
       },
       config: { pallet_activo: activePallet },
     };
