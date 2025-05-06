@@ -1,7 +1,7 @@
 /**
  * ────────────────────────────────────────────────────────────────────────────
  *  System‑wide configuration (key → value) stored in DynamoDB
- *  – 100 % aligned with the rest of your model layer (no raw AWS client here)
+ *  – 100 % aligned with the rest of your model layer (no raw AWS client here)
  * ────────────────────────────────────────────────────────────────────────────
  */
 const { dynamoDB, Tables } = require('./index');
@@ -11,7 +11,7 @@ const tableName = Tables.SystemConfig; // ← viene de tu archivo index.js
 /* ─────────────── CRUD ──────────────────────────────────────────────────── */
 
 /**
- * Persiste un par clave / valor
+ * Persiste un par clave / valor
  * @param {string}  configKey
  * @param {any}     configValue  (se guarda tal cual en DynamoDB)
  */

@@ -4,6 +4,7 @@ const BOXES   = Tables.Boxes;
 const PALLETS = Tables.Pallets;
 const ISSUES  = Tables.Issues;
 
+
 async function _countBoxesByUbicacion(ubicacion) {
   const { Count } = await dynamoDB.query({
     TableName: BOXES,
@@ -18,7 +19,7 @@ async function _countBoxesByUbicacion(ubicacion) {
 
 async function _countAllPallets() {
   /* Usamos el GSI estado‑fechaCreacion‑GSI sólo para contar,
-     partición ‘open’ + ‘closed’. */
+     partición 'open' + 'closed'. */
   const estados = ['open', 'closed'];
   let total = 0;
   for (const e of estados) {
@@ -47,6 +48,18 @@ async function _countPendingIssues() {
   return Count;
 }
 
+async function _getActivePallet() {
+    const { Count } = await dynamoDB.query({
+        TableName: PALLETS,
+        IndexName: 'estado-index',     // PK = estado
+        KeyConditionExpression: '#s = :p',
+        ExpressionAttributeNames : { '#s': 'estado' },
+        ExpressionAttributeValues: { ':p':'open' },
+        Select: 'COUNT',
+      }).promise();
+      return Count;
+}
+
 exports.getSystemDashboard = async () => {
   try {
     const [
@@ -62,7 +75,7 @@ exports.getSystemDashboard = async () => {
       _countBoxesByUbicacion('VENTA'),
       _countAllPallets(),
       _countPendingIssues(),
-      getSystemConfig('ACTIVE_PALLET_CODE'),
+      _getActivePallet(),
     ]);
 
     return {
@@ -72,8 +85,9 @@ exports.getSystemDashboard = async () => {
         huevos_en_venta  : venta,
         total_pallets    : pallets,
         issues_pendientes: pendingIssues,
+        pallets_activos: activePallet,
       },
-      config: { pallet_activo: activePallet },
+      config: { pallets_activos: activePallet },
     };
   } catch (err) {
     throw new Error(`Dashboard error: ${err.message}`);
