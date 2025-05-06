@@ -112,6 +112,7 @@ const getRoutes = {
     return createApiResponse(200, 'Unassigned boxes in packing fetched successfully', result);
   }),
   '/admin/dashboard': createHandler(async () => {
+    console.log('getSystemDashboard');
     const result = await getSystemDashboard();
     return createApiResponse(200, 'Dashboard data fetched successfully', result);
   }),

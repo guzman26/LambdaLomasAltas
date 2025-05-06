@@ -3,6 +3,25 @@ const { dynamoDB, Tables } = require('../../models/index');
 const BOXES   = Tables.Boxes;
 const PALLETS = Tables.Pallets;
 const ISSUES  = Tables.Issues;
+const systemConfig = require('../../models/systemConfig');
+const { getSystemConfig } = systemConfig;
+
+// Fallback implementation if getSystemConfig is not defined
+async function fallbackGetSystemConfig(configKey) {
+  if (!configKey) throw new Error('configKey es obligatorio');
+
+  const { Item } = await dynamoDB
+    .get({
+      TableName: Tables.SystemConfig,
+      Key: { configKey },
+    })
+    .promise();
+
+  return Item ? Item.configValue : null;
+}
+
+// Use the imported function or fallback to our implementation
+const getConfigValue = getSystemConfig || fallbackGetSystemConfig;
 
 async function _countBoxesByUbicacion(ubicacion) {
   const { Count } = await dynamoDB.query({
@@ -18,7 +37,7 @@ async function _countBoxesByUbicacion(ubicacion) {
 
 async function _countAllPallets() {
   /* Usamos el GSI estado‑fechaCreacion‑GSI sólo para contar,
-     partición ‘open’ + ‘closed’. */
+     partición 'open' + 'closed'. */
   const estados = ['open', 'closed'];
   let total = 0;
   for (const e of estados) {
@@ -62,7 +81,7 @@ exports.getSystemDashboard = async () => {
       _countBoxesByUbicacion('VENTA'),
       _countAllPallets(),
       _countPendingIssues(),
-      getSystemConfig('ACTIVE_PALLET_CODE'),
+      getConfigValue('ACTIVE_PALLET_CODE'),
     ]);
 
     return {
