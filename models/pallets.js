@@ -66,7 +66,7 @@ async function createPallet(baseCode, ubicacion = 'PACKING') {
   return pallet;
 }
 
-const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
+const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
 
 async function getPallets({ estado, ubicacion, fechaDesde, fechaHasta } = {}) {
   // 1) Por ESTADO
@@ -105,7 +105,7 @@ async function getPallets({ estado, ubicacion, fechaDesde, fechaHasta } = {}) {
   // 3) Sin filtros → no permitimos Scan
   /* ───────────────── 3) Fallback → últimos 5 días ──────────── */
   const ahora = new Date();
-  const desde = new Date(ahora.getTime() - FIVE_DAYS_MS).toISOString();
+  const desde = new Date(ahora.getTime() - TEN_DAYS_MS).toISOString();
   const hasta = ahora.toISOString();
 
   const params = {
