@@ -1,5 +1,5 @@
-const databaseService = require('../utils/db');
 const createApiResponse = require('../utils/response');
+const { getBoxesByLocation } = require('../models/boxes');
 
 /**
  * Retrieves all eggs stored in the BODEGA location
@@ -8,7 +8,7 @@ const createApiResponse = require('../utils/response');
 module.exports = async () => {
   try {
     console.log('🔍 Fetching eggs from BODEGA...');
-    const eggs = await databaseService.getEggsByLocation('BODEGA');
+    const eggs = await getBoxesByLocation('BODEGA');
 
     console.log(`📦 Retrieved ${eggs.length} eggs from BODEGA`);
     return createApiResponse(200, eggs);

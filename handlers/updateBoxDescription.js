@@ -1,34 +1,31 @@
-const AWS = require('aws-sdk');
+/* eslint-disable consistent-return */
 const createApiResponse = require('../utils/response');
+const { updateBox } = require('../models/boxes'); // ← usa el modelo, no DynamoDB directo
 
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
-
+/**
+ * Actualiza (o crea) la descripción libre que tiene una caja.
+ *
+ * @param {string} codigo         – Código de la caja (PK, 15 dígitos)
+ * @param {string} newDescription – Texto libre que el usuario escribió
+ * @returns {Promise<object>}     – Respuesta API uniforme
+ */
 const updateBoxDescription = async (codigo, newDescription) => {
-  if (!codigo || typeof codigo !== 'string') {
-    return createApiResponse(400, '❌ Invalid box code.');
-  }
+  /* 1️⃣  Validaciones de entrada ------------------------------------------------ */
+  if (!codigo || typeof codigo !== 'string')
+    return createApiResponse(400, '❌ El código de la caja es obligatorio');
 
-  if (typeof newDescription !== 'string' || newDescription.trim().length === 0) {
-    return createApiResponse(400, '❌ Description must be a non-empty string.');
-  }
+  if (typeof newDescription !== 'string' || newDescription.trim() === '')
+    return createApiResponse(400, '❌ La descripción debe ser un texto no vacío');
 
+  /* 2️⃣  Persistir usando la capa de modelo ------------------------------------ */
   try {
-    const params = {
-      TableName: 'Boxes',
-      Key: { codigo },
-      UpdateExpression: 'SET descripcion = :desc',
-      ExpressionAttributeValues: {
-        ':desc': newDescription.trim(),
-      },
-      ReturnValues: 'ALL_NEW',
-    };
+    const updated = await updateBox(codigo, { descripcion: newDescription.trim() });
 
-    const result = await dynamoDB.update(params).promise();
-
-    return createApiResponse(200, '✅ Description updated successfully', result.Attributes);
-  } catch (error) {
-    console.error('❌ Error updating description:', error);
-    return createApiResponse(500, '❌ Failed to update box description', { error: error.message });
+    return createApiResponse(200, '✅ Descripción actualizada correctamente', updated);
+  } catch (err) {
+    console.error('❌ Error al actualizar descripción:', err);
+    const status = /no encontrado/i.test(err.message) ? 404 : 500;
+    return createApiResponse(status, `❌ ${err.message}`);
   }
 };
 

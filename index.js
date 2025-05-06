@@ -1,17 +1,17 @@
 const getBoxes = require('./handlers/getBoxes');
 const getBodegaEggs = require('./handlers/getBodegaEggs');
 const getPackingEggs = require('./handlers/getPackingEggs');
-const getVentaEggs = require('./handlers/getVentaEggs');
+const getVentaBoxesHandler = require('./handlers/getVentaBoxes');
 const getEggByCodigo = require('./handlers/getEggsByCodigo');
 const getEggsByDate = require('./handlers/getEggsByDate');
-const registerEgg = require('./handlers/registerEgg');
+const registerEggHandler = require('./handlers/registerEgg');
 const getPalletsHandler = require('./handlers/getPallets');
 const { moveEgg } = require('./handlers/moveBox');
 const { movePallet } = require('./handlers/movePallet');
 const createApiResponse = require('./utils/response');
 const assignPalletHandler = require('./handlers/assignPallet');
 const addBoxToPalletHandler = require('./handlers/addBoxToPallet');
-const { setSystemConfig, getSystemConfig } = require('./handlers/systemConfig');
+const { setSystemConfig, getSystemConfig } = require('./models/systemConfig');
 const closePalletHandler = require('./handlers/closePallet');
 const createPalletHandler = require('./handlers/createPallet');
 const updateBoxDescription = require('./handlers/updateBoxDescription');
@@ -19,22 +19,22 @@ const getActivePalletsHandler = require('./handlers/getActivePallets');
 const getClosedPallets = require('./handlers/getClosedPallets');
 const getBoxesInPallet = require('./handlers/getBoxesInPallet');
 const getBoxByCode = require('./handlers/getBoxByCode');
-const getUnassignedBoxesInPacking = require('./handlers/getUnassignedBoxesInPacking');
+const getUnassignedBoxesInPackingHandler = require('./handlers/getUnassignedBoxesInPacking');
 const postIssue = require('./handlers/postIssue');
-const deleteBox = require('./handlers/deleteBox');
+const deleteBoxHandler = require('./handlers/deleteBox');
 const deletePallet = require('./handlers/deletePallet');
 const updateIssueStatusHandler = require('./handlers/updateIssueStatus');
 const AWS = require('aws-sdk');
 const codepipeline = new AWS.CodePipeline();
 
 const {
-  getSystemDashboard,
-  getIssues,
   auditAndFixData,
   backupData,
-  updateIssueStatus,
   deleteIssue,
 } = require('./handlers/admin');
+const { getSystemDashboard } = require('./handlers/admin/getSystemDashboard');
+const { getIssues } = require('./handlers/admin/getIssues');
+const { updateIssueStatus } = require('./handlers/admin/updateIssueStatus');
 const { generateReportHandler } = require('./handlers/generateReports');
 const {
   generateExcelReportHandler,
@@ -91,7 +91,7 @@ const createHandler = (handlerFn, options = {}) => {
 const getRoutes = {
   '/getBodegaEggs': getBodegaEggs,
   '/getPackingData': getPackingEggs,
-  '/getVentaData': getVentaEggs,
+  '/getVentaData': createHandler(getVentaBoxesHandler),
   '/getEggsByDate': getEggsByDate,
   '/production': getBoxes,
   '/getPallets': createHandler(getPalletsHandler),
@@ -108,7 +108,7 @@ const getRoutes = {
     return createApiResponse(200, 'Egg data fetched successfully', result);
   }),
   '/getUnassignedBoxesInPacking': createHandler(async () => {
-    const result = await getUnassignedBoxesInPacking();
+    const result = await getUnassignedBoxesInPackingHandler();
     return createApiResponse(200, 'Unassigned boxes in packing fetched successfully', result);
   }),
   '/admin/dashboard': createHandler(async () => {
@@ -146,8 +146,8 @@ const postRoutes = {
     } else {
       if (ubicacion === CONFIG.LOCATIONS.PACKING) {
         return palletCodigo
-          ? await registerEgg(codigo, palletCodigo, palletCodigo, scannedCodes)
-          : await registerEgg(codigo);
+          ? await registerEggHandler(codigo, palletCodigo, palletCodigo, scannedCodes)
+          : await registerEggHandler(codigo);
       } else {
         return await moveEgg(codigo, ubicacion);
       }
@@ -167,7 +167,7 @@ const postRoutes = {
     helpers.validateRequired({ codigo }, ['codigo']);
     const pallet = await getSystemConfig('ACTIVE_PALLET_CODE');
     if (!pallet) throw { statusCode: 400, message: 'No active pallet found. Please assign one.' };
-    return await registerEgg(codigo, pallet, customInfo);
+    return await registerEggHandler(codigo, pallet, customInfo);
   }),
 
   '/movePallet': createHandler(async event => {
@@ -217,7 +217,7 @@ const postRoutes = {
   '/admin/updateIssueStatus': createHandler(async event => {
     const { issueId, status, resolution } = helpers.parseBody(event);
     helpers.validateRequired({ issueId, status }, ['issueId', 'status']);
-    const result = await updateIssueStatusHandler(issueId, status, resolution);
+    const result = await updateIssueStatus(issueId, status, resolution);
     return createApiResponse(200, 'Issue status updated successfully', result);
   }),
 
@@ -246,7 +246,7 @@ const postRoutes = {
   '/admin/deleteBox': createHandler(async event => {
     const { codigo } = helpers.parseBody(event);
     helpers.validateRequired({ codigo }, ['codigo']);
-    const result = await deleteBox(codigo);
+    const result = await deleteBoxHandler(codigo);
     return createApiResponse(result.success ? 200 : 400, result.message);
   }),
 

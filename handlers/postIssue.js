@@ -1,4 +1,3 @@
-// handlers/postIssue.js
 const createApiResponse = require('../utils/response');
 const { createIssue } = require('../models/issues');
 
