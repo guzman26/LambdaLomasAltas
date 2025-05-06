@@ -10,15 +10,27 @@ const createApiResponse = require('../utils/response');
 
 /**
  * Handler GET /boxes
- *   • Sin query params        → devuelve todos los boxes (scan)
+ *   • Sin query params        → devuelve boxes con paginación (query por fecha)
  *   • ?codigo=...             → devuelve un solo box
  *   • ?ubicacion=PACKING      → lista por ubicación
  *   • ?palletId=PAL-123       → lista por pallet
+ *   • ?limit=50               → limita cantidad de resultados
+ *   • ?lastKey=...            → token de paginación (encoded)
  */
 module.exports = async event => {
   try {
     const { queryStringParameters = {} } = event;
-    const { codigo, ubicacion, palletId } = queryStringParameters;
+    const { codigo, ubicacion, palletId, limit = 50, lastKey: lastKeyEncoded } = queryStringParameters;
+    
+    // Decode lastKey if provided
+    let lastKey;
+    if (lastKeyEncoded) {
+      try {
+        lastKey = JSON.parse(Buffer.from(lastKeyEncoded, 'base64').toString());
+      } catch (err) {
+        return createApiResponse(400, 'Token de paginación inválido');
+      }
+    }
 
     // 1) Buscar por código (caso más específico)
     if (codigo) {
@@ -41,7 +53,7 @@ module.exports = async event => {
       return createApiResponse(200, boxes);
     }
 
-    // 4) Sin filtros → scan (puedes paginar en prod)
+    // 4) Sin filtros → query por fecha con paginación
     const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
     const ahora = new Date();
     const desde = new Date(ahora.getTime() - THREE_DAYS_MS).toISOString();
@@ -57,20 +69,30 @@ module.exports = async event => {
         ':d': desde,
         ':h': hasta,
       },
-      ScanIndexForward: false,
+      ScanIndexForward: false, // más recientes primero
+      Limit: parseInt(limit),
     };
 
-    const items = [];
-    let lastKey;
-    do {
-      const { Items, LastEvaluatedKey } = await dynamoDB
-        .query({ ...params, ExclusiveStartKey: lastKey })
-        .promise();
-      items.push(...Items);
-      lastKey = LastEvaluatedKey;
-    } while (lastKey);
+    // Incluir el lastKey si está presente
+    if (lastKey) {
+      params.ExclusiveStartKey = lastKey;
+    }
 
-    return createApiResponse(200, items);
+    const { Items, LastEvaluatedKey } = await dynamoDB.query(params).promise();
+    
+    // Preparar respuesta con paginación
+    const response = {
+      items: Items,
+      count: Items.length,
+    };
+    
+    // Si hay más resultados, incluir un token de paginación
+    if (LastEvaluatedKey) {
+      response.lastKey = Buffer.from(JSON.stringify(LastEvaluatedKey)).toString('base64');
+      response.hasMore = true;
+    }
+
+    return createApiResponse(200, response);
   } catch (err) {
     console.error('Error en getBoxes handler:', err);
     return createApiResponse(500, `Error al obtener boxes: ${err.message}`);
