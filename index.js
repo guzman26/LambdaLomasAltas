@@ -11,6 +11,7 @@ const { movePallet } = require('./handlers/movePallet');
 const createApiResponse = require('./utils/response');
 const assignPalletHandler = require('./handlers/assignPallet');
 const addBoxToPalletHandler = require('./handlers/addBoxToPallet');
+const unsubscribeBoxFromPalletHandler = require('./handlers/unsubscribeBoxFromPallet');
 const { setSystemConfig, getSystemConfig } = require('./models/systemConfig');
 const closePalletHandler = require('./handlers/closePallet');
 const createPalletHandler = require('./handlers/createPallet');
@@ -217,6 +218,14 @@ const postRoutes = {
     const result = await getBoxByCode(codigo);
     return createApiResponse(200, 'Box data fetched successfully', result);
   }),
+
+  '/unsubscribeBoxFromPallet': createHandler(async event => {
+    const { boxCode, palletId } = helpers.parseBody(event);
+    helpers.validateRequired({ boxCode, palletId }, ['boxCode', 'palletId']);
+    const result = await unsubscribeBoxFromPalletHandler(palletId, boxCode);
+    return createApiResponse(200, 'Box unsubscribed from pallet successfully', result);
+  }),
+
   '/postIssue': createHandler(async event => {
     const { descripcion } = helpers.parseBody(event);
     console.log('Descripción recibida:', descripcion);

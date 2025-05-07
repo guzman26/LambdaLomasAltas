@@ -211,6 +211,37 @@ async function assignBoxToPallet(codigo, palletId) {
 }
 
 /**
+ * Desasigna un box de un pallet
+ * @param {string} boxCode - Código del box
+ * @param {string} palletId - ID del pallet
+ * @returns {Promise<Object>} Objeto con el pallet y box actualizados
+ */
+async function unsubscribeBoxFromPallet(boxCode, palletId) {
+  // 1. Validar que el box existe y pertenece al pallet indicado
+  const box = await getBoxByCode(boxCode);
+  if (!box) throw new Error(`Box "${boxCode}" no existe`);
+  if (box.palletId !== palletId)
+    throw new Error(`Box "${boxCode}" no pertenece al pallet "${palletId}"`);
+
+  // 2. Obtener el pallet para actualizar su lista de cajas
+  const { getPalletByCode, updatePalletBoxes } = require('./pallets');
+  const pallet = await getPalletByCode(palletId);
+  if (!pallet) throw new Error(`Pallet "${palletId}" no existe`);
+
+  // 3. Remover la caja de la lista del pallet
+  const nuevasCajas = (pallet.cajas || []).filter(c => c !== boxCode);
+  const updatedPallet = await updatePalletBoxes(palletId, nuevasCajas);
+
+  // 4. Actualizar el box: quitando palletId y estableciendo ubicación a PACKING
+  const updatedBox = await updateBox(boxCode, {
+    palletId: 'UNASSIGNED',
+    ubicacion: 'PACKING',
+  });
+
+  return { updatedPallet, updatedBox };
+}
+
+/**
  * Contar boxes por ubicación
  * @returns {Promise<Object>} Conteo de boxes por ubicación
  */
@@ -344,6 +375,7 @@ module.exports = {
   getBoxesByPallet,
   moveBox,
   assignBoxToPallet,
+  unsubscribeBoxFromPallet,
   countBoxesByLocation,
   boxExists,
   deleteBoxCascade,

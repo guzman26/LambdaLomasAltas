@@ -11,7 +11,7 @@ async function _countBoxesByUbicacion(ubicacion) {
     IndexName: 'ubicacion-index',          // PK = ubicacion
     KeyConditionExpression: '#u = :u',
     ExpressionAttributeNames : { '#u': 'ubicacion' },
-    ExpressionAttributeValues: { ':u': ubicacion },
+    ExpressionAttributeValues: { ':u': ubicacion.toUpperCase() },
     Select: 'COUNT',
   }).promise();
   return Count;
