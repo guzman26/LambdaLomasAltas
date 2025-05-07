@@ -409,6 +409,7 @@ exports.handler = async event => {
       path: event.rawPath || event.path,
       queryParams: event.queryStringParameters,
       pathParams: event.pathParameters,
+      body: event.body,
     });
 
     const method = event.httpMethod || event.requestContext?.http?.method;
