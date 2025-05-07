@@ -25,7 +25,7 @@ async function movePallet(codigo, destino) {
     const { boxesUpdated } = await movePalletWithBoxes(codigo, destino);
     
     // Record pallet movement in history
-    // await recordMovement(codigo, 'PALLET', fromLocation, destino);
+    await recordMovement(codigo, 'PALLET', fromLocation, destino);
 
     return createApiResponse(
       200,

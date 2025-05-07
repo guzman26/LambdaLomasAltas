@@ -13,6 +13,7 @@ const tableName = Tables.MovementHistory;
  * @returns {Promise<Object>} The created history record
  */
 async function recordMovement(codigo, itemType, fromLocation, toLocation, userId = 'system') {
+  console.log('recordMovement', codigo, itemType, fromLocation, toLocation, userId);
   if (!codigo || !fromLocation || !toLocation) {
     throw new Error('codigo, fromLocation, and toLocation are required');
   }
