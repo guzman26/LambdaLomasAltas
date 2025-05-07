@@ -24,6 +24,8 @@ const postIssue = require('./handlers/postIssue');
 const deleteBoxHandler = require('./handlers/deleteBox');
 const deletePallet = require('./handlers/deletePallet');
 const updateIssueStatusHandler = require('./handlers/updateIssueStatus');
+const getItemHistoryHandler = require('./handlers/getItemHistory');
+const getAllHistory = require('./handlers/getMovementHistory');
 const AWS = require('aws-sdk');
 const codepipeline = new AWS.CodePipeline();
 
@@ -120,6 +122,12 @@ const getRoutes = {
     const { status, startDate, endDate } = helpers.getQueryParams(event);
     const result = await getIssues({ status, startDate, endDate });
     return createApiResponse(200, 'Issues fetched successfully', result);
+  }),
+  '/getItemHistory': createHandler(getItemHistoryHandler),
+  '/getMovementHistory': createHandler(async event => {
+    const { startDate, endDate } = helpers.getQueryParams(event);
+    const result = await getAllHistory(startDate, endDate);
+    return createApiResponse(200, 'Movement history fetched successfully', result);
   }),
 };
 

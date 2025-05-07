@@ -3,7 +3,7 @@ const {
   getBoxByCode,
   moveBox, // update ubicacion
 } = require('../models/boxes');
-
+const { recordMovement } = require('../models/movementHistory');
 const createApiResponse = require('../utils/response');
 
 /* ───────────────── helpers ───────────────── */
@@ -39,8 +39,13 @@ const moveEgg = async (codigo, destino) => {
       return createApiResponse(400, `La caja ${codigo} ya se encuentra en ${destino}.`);
     }
 
+    const fromLocation = box.ubicacion;
+
     /* 3) Actualizar ubicación mediante el modelo */
     const updated = await moveBox(codigo, destino);
+
+    /* 4) Registrar el movimiento en el historial */
+    await recordMovement(codigo, 'BOX', fromLocation, destino);
 
     return createApiResponse(200, `Caja ${codigo} movida a ${destino}`, updated);
   } catch (err) {

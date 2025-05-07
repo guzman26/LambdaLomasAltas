@@ -71,6 +71,7 @@ const Tables = {
   Issues: `Issues${suffix}`,
   AdminLogs: `AdminLogs${suffix}`,
   SystemConfig: `SystemConfig${suffix}`,
+  MovementHistory: `MovementHistory${suffix}`,
 };
 
 module.exports = {
