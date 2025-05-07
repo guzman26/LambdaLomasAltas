@@ -73,6 +73,7 @@ exports.getSystemDashboard = async () => {
       _countBoxesByUbicacion('PACKING'),
       _countBoxesByUbicacion('BODEGA'),
       _countBoxesByUbicacion('VENTA'),
+      _countBoxesByUbicacion('TRANSITO'),
       _countAllPallets(),
       _countPendingIssues(),
       _getActivePallet(),
