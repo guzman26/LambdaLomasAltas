@@ -246,7 +246,7 @@ async function unsubscribeBoxFromPallet(boxCode, palletId) {
  * @returns {Promise<Object>} Conteo de boxes por ubicación
  */
 async function countBoxesByLocation() {
-  const ubicaciones = ['PACKING', 'BODEGA', 'VENTA'];
+  const ubicaciones = ['PACKING', 'BODEGA', 'VENTA', 'TRANSITO'];
   const counts = {};
 
   for (const u of ubicaciones) {
