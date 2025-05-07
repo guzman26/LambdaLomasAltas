@@ -12,9 +12,9 @@ const tableName = Tables.MovementHistory;
  * @param {string} userId - Optional user ID who performed the action
  * @returns {Promise<Object>} The created history record
  */
-async function recordMovement(itemCode, itemType, fromLocation, toLocation, userId = 'system') {
-  if (!itemCode || !fromLocation || !toLocation) {
-    throw new Error('itemCode, fromLocation, and toLocation are required');
+async function recordMovement(codigo, itemType, fromLocation, toLocation, userId = 'system') {
+  if (!codigo || !fromLocation || !toLocation) {
+    throw new Error('codigo, fromLocation, and toLocation are required');
   }
   
   if (!['BOX', 'PALLET'].includes(itemType)) {
