@@ -157,10 +157,6 @@ async function togglePalletStatus(codigo) {
   const estadoActual = pallet.estado || 'open';
   const cerrar = estadoActual === 'open';
 
-  if (cerrar && (!Array.isArray(pallet.cajas) || pallet.cajas.length === 0)) {
-    throw new Error(`Pallet ${codigo} no tiene cajas; no se puede cerrar`);
-  }
-
   const nuevoEstado = cerrar ? 'closed' : 'open';
 
   // 2. Update
