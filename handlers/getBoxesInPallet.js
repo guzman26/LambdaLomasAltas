@@ -58,8 +58,7 @@ module.exports = async (event) => {
 
     return createApiResponse(
       200,
-      { count: results.length, items: results },
-      null
+      { count: results.length, items: results }
     );
   } catch (err) {
     console.error('❌ Error fetching box details:', err);
