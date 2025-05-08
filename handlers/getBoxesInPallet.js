@@ -1,56 +1,72 @@
-const AWS = require('aws-sdk');
-const createApiResponse = require('../utils/response');
-const Tables = require('../models/index');
+const { dynamoDB, Tables } = require('../models/index');
+const createApiResponse     = require('../utils/response');
 
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
-const TABLE_NAME = Tables.Boxes;
+const TABLE_NAME = Tables.Boxes;      // e.g. 'Boxes-dev'
 
 /**
- * Lambda handler to get full details of multiple boxes
- * @param {Object} event - Lambda event
- * @returns {Object} API response
+ * Body esperado: { "codigos": ["516251222021001", "516251222021002", ...] }
  */
-const getBoxesInPallet = async event => {
+module.exports = async (event) => {
   try {
-    const body = JSON.parse(event.body);
-    const { codigos } = body;
-    console.log('🔎 Searching for boxes:', codigos);
+    const { codigos } = JSON.parse(event.body || '{}');
 
     if (!Array.isArray(codigos) || codigos.length === 0) {
-      return createApiResponse(400, "Debe proporcionar una lista de códigos en 'codigos'.");
+      return createApiResponse(
+        400,
+        "Debe proporcionar un arreglo 'codigos' con al menos un elemento."
+      );
     }
 
-    // DynamoDB allows max 100 keys per batch request
+    /* 1️⃣  Sanitizar — quitar vacíos y duplicados */
+    const uniqueCodes = [...new Set(codigos.filter(Boolean))];
+
+    /* 2️⃣  Fragmentar en bloques de 100 */
     const batches = [];
-    for (let i = 0; i < codigos.length; i += 100) {
-      const batch = codigos.slice(i, i + 100).map(codigo => ({ codigo }));
-      batches.push(batch);
+    for (let i = 0; i < uniqueCodes.length; i += 100) {
+      batches.push(uniqueCodes.slice(i, i + 100));
     }
 
-    const allResults = [];
+    const results = [];
 
     for (const batch of batches) {
-      const params = {
+      /* ---------- BatchGet ---------- */
+      let params = {
         RequestItems: {
           [TABLE_NAME]: {
-            Keys: batch,
+            Keys: batch.map((codigo) => ({ codigo })), // PK = 'codigo'
           },
         },
       };
 
-      const result = await dynamoDB.batchGet(params).promise();
-      console.log('🔍 DynamoDB result:', JSON.stringify(result, null, 2));
-      const foundItems = result.Responses[TABLE_NAME] || [];
-      allResults.push(...foundItems);
+      let response = await dynamoDB.batchGet(params).promise();
+      results.push(...response.Responses[TABLE_NAME]);
+
+      /* 3️⃣  Reintento rápido si Dynamo devolvió claves sin procesar */
+      if (
+        response.UnprocessedKeys &&
+        response.UnprocessedKeys[TABLE_NAME] &&
+        response.UnprocessedKeys[TABLE_NAME].Keys.length > 0
+      ) {
+        console.warn(
+          `⏳ Reintentando ${response.UnprocessedKeys[TABLE_NAME].Keys.length} claves sin procesar…`
+        );
+        params.RequestItems = response.UnprocessedKeys;
+        const retry = await dynamoDB.batchGet(params).promise();
+        results.push(...retry.Responses[TABLE_NAME]);
+      }
     }
 
-    return createApiResponse(200, `✅ Se encontraron ${allResults.length} cajas`, allResults);
-  } catch (error) {
-    console.error('❌ Error fetching box details:', error);
-    return createApiResponse(500, 'Error interno al obtener detalles de las cajas', {
-      error: error.message,
-    });
+    return createApiResponse(
+      200,
+      { count: results.length, items: results },
+      null
+    );
+  } catch (err) {
+    console.error('❌ Error fetching box details:', err);
+    return createApiResponse(
+      500,
+      'Error interno al obtener detalles de las cajas',
+      { error: err.message }
+    );
   }
 };
-
-module.exports = getBoxesInPallet;
