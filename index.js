@@ -93,7 +93,10 @@ const createHandler = (handlerFn, options = {}) => {
 
 const getRoutes = {
   '/getBodegaEggs': getBodegaEggs,
-  '/getPackingData': getPackingEggs,
+  '/getPackingData': createHandler(async event => {
+    const result = await getPackingEggs(event);
+    return createApiResponse(200, 'Packing data fetched successfully', result);
+  }),
   '/getVentaData': createHandler(getVentaBoxesHandler),
   '/getEggsByDate': getEggsByDate,
   '/production': getBoxes,
