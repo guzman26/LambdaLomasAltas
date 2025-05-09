@@ -1,4 +1,5 @@
 const { getPalletByCode, movePalletWithBoxes } = require('../models/pallets');
+const { recordMovement } = require('../models/movementHistory');
 const createApiResponse = require('../utils/response');
 
 /* helpers */
@@ -19,7 +20,12 @@ async function movePallet(codigo, destino) {
     if (pallet.ubicacion === destino)
       return createApiResponse(400, `El pallet ${codigo} ya se encuentra en ${destino}.`);
 
+    const fromLocation = pallet.ubicacion;
+    
     const { boxesUpdated } = await movePalletWithBoxes(codigo, destino);
+    
+    // Record pallet movement in history
+    await recordMovement(codigo, 'PALLET', fromLocation, destino);
 
     return createApiResponse(
       200,

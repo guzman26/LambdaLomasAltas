@@ -11,7 +11,7 @@ async function _countBoxesByUbicacion(ubicacion) {
     IndexName: 'ubicacion-index',          // PK = ubicacion
     KeyConditionExpression: '#u = :u',
     ExpressionAttributeNames : { '#u': 'ubicacion' },
-    ExpressionAttributeValues: { ':u': ubicacion },
+    ExpressionAttributeValues: { ':u': ubicacion.toUpperCase() },
     Select: 'COUNT',
   }).promise();
   return Count;
@@ -66,6 +66,7 @@ exports.getSystemDashboard = async () => {
       packing,
       bodega,
       venta,
+      transito,
       pallets,
       pendingIssues,
       activePallet,
@@ -73,6 +74,7 @@ exports.getSystemDashboard = async () => {
       _countBoxesByUbicacion('PACKING'),
       _countBoxesByUbicacion('BODEGA'),
       _countBoxesByUbicacion('VENTA'),
+      _countBoxesByUbicacion('TRANSITO'),
       _countAllPallets(),
       _countPendingIssues(),
       _getActivePallet(),
@@ -83,6 +85,7 @@ exports.getSystemDashboard = async () => {
         huevos_en_packing: packing,
         huevos_en_bodega : bodega,
         huevos_en_venta  : venta,
+        huevos_en_transito: transito,
         total_pallets    : pallets,
         issues_pendientes: pendingIssues,
         pallets_activos: activePallet,

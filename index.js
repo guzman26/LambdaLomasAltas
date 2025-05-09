@@ -11,6 +11,7 @@ const { movePallet } = require('./handlers/movePallet');
 const createApiResponse = require('./utils/response');
 const assignPalletHandler = require('./handlers/assignPallet');
 const addBoxToPalletHandler = require('./handlers/addBoxToPallet');
+const unsubscribeBoxFromPalletHandler = require('./handlers/unsubscribeBoxFromPallet');
 const { setSystemConfig, getSystemConfig } = require('./models/systemConfig');
 const closePalletHandler = require('./handlers/closePallet');
 const createPalletHandler = require('./handlers/createPallet');
@@ -24,6 +25,8 @@ const postIssue = require('./handlers/postIssue');
 const deleteBoxHandler = require('./handlers/deleteBox');
 const deletePallet = require('./handlers/deletePallet');
 const updateIssueStatusHandler = require('./handlers/updateIssueStatus');
+const getItemHistoryHandler = require('./handlers/getItemHistory');
+const getAllHistory = require('./handlers/getMovementHistory');
 const AWS = require('aws-sdk');
 const codepipeline = new AWS.CodePipeline();
 
@@ -90,7 +93,10 @@ const createHandler = (handlerFn, options = {}) => {
 
 const getRoutes = {
   '/getBodegaEggs': getBodegaEggs,
-  '/getPackingData': getPackingEggs,
+  '/getPackingData': createHandler(async event => {
+    const result = await getPackingEggs(event);
+    return createApiResponse(200, 'Packing data fetched successfully', result);
+  }),
   '/getVentaData': createHandler(getVentaBoxesHandler),
   '/getEggsByDate': getEggsByDate,
   '/production': getBoxes,
@@ -120,6 +126,12 @@ const getRoutes = {
     const { status, startDate, endDate } = helpers.getQueryParams(event);
     const result = await getIssues({ status, startDate, endDate });
     return createApiResponse(200, 'Issues fetched successfully', result);
+  }),
+  '/getItemHistory': createHandler(getItemHistoryHandler),
+  '/getMovementHistory': createHandler(async event => {
+    const { startDate, endDate } = helpers.getQueryParams(event);
+    const result = await getAllHistory(startDate, endDate);
+    return createApiResponse(200, 'Movement history fetched successfully', result);
   }),
 };
 
@@ -209,6 +221,14 @@ const postRoutes = {
     const result = await getBoxByCode(codigo);
     return createApiResponse(200, 'Box data fetched successfully', result);
   }),
+
+  '/unsubscribeBoxFromPallet': createHandler(async event => {
+    const { boxCode, palletId } = helpers.parseBody(event);
+    helpers.validateRequired({ boxCode, palletId }, ['boxCode', 'palletId']);
+    const result = await unsubscribeBoxFromPalletHandler(palletId, boxCode);
+    return createApiResponse(200, 'Box unsubscribed from pallet successfully', result);
+  }),
+
   '/postIssue': createHandler(async event => {
     const { descripcion } = helpers.parseBody(event);
     console.log('Descripción recibida:', descripcion);
@@ -401,6 +421,7 @@ exports.handler = async event => {
       path: event.rawPath || event.path,
       queryParams: event.queryStringParameters,
       pathParams: event.pathParameters,
+      body: event.body,
     });
 
     const method = event.httpMethod || event.requestContext?.http?.method;

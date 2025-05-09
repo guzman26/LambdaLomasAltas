@@ -1,5 +1,6 @@
 const { dynamoDB, Tables } = require('./index');
 const { getPalletByCode } = require('./pallets');
+const { handleDynamoDBError, validateRequiredParams } = require('../utils/dynamoErrors');
 
 // DynamoDB client and table name for Boxes
 const tableName = Tables.Boxes;
@@ -10,31 +11,28 @@ const tableName = Tables.Boxes;
  * @returns {Promise<Object>} Box creado
  */
 async function createBox(boxData) {
-  if (!boxData.codigo) {
-    throw new Error('El código del box es obligatorio');
-  }
-
-  // Asegurar que tenemos campos mínimos requeridos
-  const box = {
-    codigo: boxData.codigo,
-    ubicacion: boxData.ubicacion || 'PACKING',
-    timestamp: boxData.timestamp || new Date().toISOString(),
-    ...boxData,
-  };
-
-  const params = {
-    TableName: tableName,
-    Item: box,
-    ReturnValues: 'ALL_OLD',
-  };
-
   try {
+    validateRequiredParams(boxData, ['codigo']);
+
+    // Asegurar que tenemos campos mínimos requeridos
+    const box = {
+      codigo: boxData.codigo,
+      ubicacion: boxData.ubicacion || 'PACKING',
+      timestamp: boxData.timestamp || new Date().toISOString(),
+      ...boxData,
+    };
+
+    const params = {
+      TableName: tableName,
+      Item: box,
+      ReturnValues: 'ALL_OLD',
+    };
+
     await dynamoDB.put(params).promise();
     console.log(`Box creado/actualizado: ${box.codigo}`);
     return box;
   } catch (error) {
-    console.error(`Error al crear/actualizar box ${box.codigo}:`, error);
-    throw new Error(`Error al crear/actualizar box: ${error.message}`);
+    throw handleDynamoDBError(error, 'crear/actualizar', 'box', boxData?.codigo);
   }
 }
 
@@ -44,17 +42,18 @@ async function createBox(boxData) {
  * @returns {Promise<Object|null>} Box encontrado o null si no existe
  */
 async function getBoxByCode(codigo) {
-  const params = {
-    TableName: tableName,
-    Key: { codigo },
-  };
-
   try {
+    validateRequiredParams({ codigo }, ['codigo']);
+    
+    const params = {
+      TableName: tableName,
+      Key: { codigo },
+    };
+
     const result = await dynamoDB.get(params).promise();
     return result.Item || null;
   } catch (error) {
-    console.error(`Error al obtener box ${codigo}:`, error);
-    throw new Error(`Error al obtener box: ${error.message}`);
+    throw handleDynamoDBError(error, 'obtener', 'box', codigo);
   }
 }
 
@@ -65,53 +64,59 @@ async function getBoxByCode(codigo) {
  * @returns {Promise<Object>} Box actualizado
  */
 async function updateBox(codigo, updates) {
-  // Comprobar que el box existe primero
-  const existingBox = await getBoxByCode(codigo);
-  if (!existingBox) {
-    throw new Error(`Box con código ${codigo} no encontrado`);
-  }
-
-  // Construir expresiones de actualización dinámica
-  const updateExpressions = [];
-  const expressionAttributeNames = {};
-  const expressionAttributeValues = {};
-
-  // Prohibir actualizar el código (clave primaria)
-  const excludedFields = ['codigo'];
-
-  Object.entries(updates).forEach(([key, value]) => {
-    if (!excludedFields.includes(key)) {
-      updateExpressions.push(`#${key} = :${key}`);
-      expressionAttributeNames[`#${key}`] = key;
-      expressionAttributeValues[`:${key}`] = value;
-    }
-  });
-
-  // Añadir timestamp de actualización
-  updateExpressions.push('#updatedAt = :updatedAt');
-  expressionAttributeNames['#updatedAt'] = 'updatedAt';
-  expressionAttributeValues[':updatedAt'] = new Date().toISOString();
-
-  if (updateExpressions.length === 0) {
-    return existingBox; // Nada que actualizar
-  }
-
-  const params = {
-    TableName: tableName,
-    Key: { codigo },
-    UpdateExpression: `SET ${updateExpressions.join(', ')}`,
-    ExpressionAttributeNames: expressionAttributeNames,
-    ExpressionAttributeValues: expressionAttributeValues,
-    ReturnValues: 'ALL_NEW',
-  };
-
   try {
+    validateRequiredParams({ codigo, updates }, ['codigo', 'updates']);
+    
+    // Comprobar que el box existe primero
+    const existingBox = await getBoxByCode(codigo);
+    if (!existingBox) {
+      throw new Error(`Box con código ${codigo} no encontrado`);
+    }
+
+    // Construir expresiones de actualización dinámica
+    const updateExpressions = [];
+    const expressionAttributeNames = {};
+    const expressionAttributeValues = {};
+
+    // Prohibir actualizar el código (clave primaria)
+    const excludedFields = ['codigo'];
+
+    // Validate updates object
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+      throw new Error('El parámetro de actualizaciones debe ser un objeto válido');
+    }
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (!excludedFields.includes(key)) {
+        updateExpressions.push(`#${key} = :${key}`);
+        expressionAttributeNames[`#${key}`] = key;
+        expressionAttributeValues[`:${key}`] = value;
+      }
+    });
+
+    // Añadir timestamp de actualización
+    updateExpressions.push('#updatedAt = :updatedAt');
+    expressionAttributeNames['#updatedAt'] = 'updatedAt';
+    expressionAttributeValues[':updatedAt'] = new Date().toISOString();
+
+    if (updateExpressions.length === 0) {
+      return existingBox; // Nada que actualizar
+    }
+
+    const params = {
+      TableName: tableName,
+      Key: { codigo },
+      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: 'ALL_NEW',
+    };
+
     const result = await dynamoDB.update(params).promise();
     console.log(`Box actualizado: ${codigo}`);
     return result.Attributes;
   } catch (error) {
-    console.error(`Error al actualizar box ${codigo}:`, error);
-    throw new Error(`Error al actualizar box: ${error.message}`);
+    throw handleDynamoDBError(error, 'actualizar', 'box', codigo);
   }
 }
 
@@ -211,11 +216,42 @@ async function assignBoxToPallet(codigo, palletId) {
 }
 
 /**
+ * Desasigna un box de un pallet
+ * @param {string} boxCode - Código del box
+ * @param {string} palletId - ID del pallet
+ * @returns {Promise<Object>} Objeto con el pallet y box actualizados
+ */
+async function unsubscribeBoxFromPallet(boxCode, palletId) {
+  // 1. Validar que el box existe y pertenece al pallet indicado
+  const box = await getBoxByCode(boxCode);
+  if (!box) throw new Error(`Box "${boxCode}" no existe`);
+  if (box.palletId !== palletId)
+    throw new Error(`Box "${boxCode}" no pertenece al pallet "${palletId}"`);
+
+  // 2. Obtener el pallet para actualizar su lista de cajas
+  const { getPalletByCode, updatePalletBoxes } = require('./pallets');
+  const pallet = await getPalletByCode(palletId);
+  if (!pallet) throw new Error(`Pallet "${palletId}" no existe`);
+
+  // 3. Remover la caja de la lista del pallet
+  const nuevasCajas = (pallet.cajas || []).filter(c => c !== boxCode);
+  const updatedPallet = await updatePalletBoxes(palletId, nuevasCajas);
+
+  // 4. Actualizar el box: quitando palletId y estableciendo ubicación a PACKING
+  const updatedBox = await updateBox(boxCode, {
+    palletId: 'UNASSIGNED',
+    ubicacion: 'PACKING',
+  });
+
+  return { updatedPallet, updatedBox };
+}
+
+/**
  * Contar boxes por ubicación
  * @returns {Promise<Object>} Conteo de boxes por ubicación
  */
 async function countBoxesByLocation() {
-  const ubicaciones = ['PACKING', 'BODEGA', 'VENTA'];
+  const ubicaciones = ['PACKING', 'BODEGA', 'VENTA', 'TRANSITO'];
   const counts = {};
 
   for (const u of ubicaciones) {
@@ -344,6 +380,7 @@ module.exports = {
   getBoxesByPallet,
   moveBox,
   assignBoxToPallet,
+  unsubscribeBoxFromPallet,
   countBoxesByLocation,
   boxExists,
   deleteBoxCascade,
