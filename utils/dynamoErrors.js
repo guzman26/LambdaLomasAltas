@@ -15,25 +15,29 @@ function handleDynamoDBError(error, operation, entity, id = '') {
 
   // Common DynamoDB errors with more user-friendly messages
   if (error.code === 'ConditionalCheckFailedException') {
-    return new Error(`La operación falló porque la condición no se cumplió (${operation} ${entity} ${id})`);
+    return new Error(
+      `La operación falló porque la condición no se cumplió (${operation} ${entity} ${id})`
+    );
   }
-  
+
   if (error.code === 'ResourceNotFoundException') {
     return new Error(`Recurso no encontrado: ${entity}${id ? ` con ID ${id}` : ''}`);
   }
-  
+
   if (error.code === 'ProvisionedThroughputExceededException') {
-    return new Error('Límite de capacidad excedido. Por favor, inténtelo de nuevo en unos momentos.');
+    return new Error(
+      'Límite de capacidad excedido. Por favor, inténtelo de nuevo en unos momentos.'
+    );
   }
-  
+
   if (error.code === 'ThrottlingException') {
     return new Error('Demasiadas solicitudes. Por favor, inténtelo de nuevo en unos momentos.');
   }
-  
+
   if (error.code === 'ValidationException') {
     return new Error(`Error de validación: ${error.message}`);
   }
-  
+
   if (error.code === 'TransactionCanceledException') {
     return new Error(`Transacción cancelada: ${error.message}`);
   }
@@ -53,7 +57,7 @@ function validateRequiredParams(params, required) {
     const value = params[param];
     return value === undefined || value === null || value === '';
   });
-  
+
   if (missing.length > 0) {
     throw new Error(`Parámetros requeridos faltantes: ${missing.join(', ')}`);
   }
@@ -68,7 +72,7 @@ const validators = {
    * @param {string} code - The box code to validate
    * @returns {boolean} True if valid
    */
-  isValidBoxCode: (code) => {
+  isValidBoxCode: code => {
     return typeof code === 'string' && /^\d{15}$/.test(code);
   },
 
@@ -77,7 +81,7 @@ const validators = {
    * @param {string} code - The pallet code to validate
    * @returns {boolean} True if valid
    */
-  isValidPalletCode: (code) => {
+  isValidPalletCode: code => {
     return typeof code === 'string' && /^\d{12}$/.test(code);
   },
 
@@ -86,7 +90,7 @@ const validators = {
    * @param {string} code - The base code to validate
    * @returns {boolean} True if valid
    */
-  isValidBaseCode: (code) => {
+  isValidBaseCode: code => {
     return typeof code === 'string' && /^\d{9}$/.test(code);
   },
 
@@ -95,7 +99,7 @@ const validators = {
    * @param {string} location - The location to validate
    * @returns {boolean} True if valid
    */
-  isValidLocation: (location) => {
+  isValidLocation: location => {
     return ['PACKING', 'BODEGA', 'VENTA', 'TRANSITO'].includes(location);
   },
 
@@ -104,7 +108,7 @@ const validators = {
    * @param {string} dateStr - The date string to validate
    * @returns {boolean} True if valid
    */
-  isValidISODate: (dateStr) => {
+  isValidISODate: dateStr => {
     if (typeof dateStr !== 'string') return false;
     const date = new Date(dateStr);
     return !isNaN(date.getTime()) && dateStr.includes('T');
@@ -115,7 +119,7 @@ const validators = {
    * @param {*} value - The value to validate
    * @returns {boolean} True if valid
    */
-  isNonEmptyString: (value) => {
+  isNonEmptyString: value => {
     return typeof value === 'string' && value.trim().length > 0;
   },
 
@@ -124,9 +128,9 @@ const validators = {
    * @param {*} value - The value to validate
    * @returns {boolean} True if valid
    */
-  isPositiveInteger: (value) => {
+  isPositiveInteger: value => {
     return Number.isInteger(value) && value > 0;
-  }
+  },
 };
 
 /**
@@ -137,13 +141,13 @@ const validators = {
  */
 function validateData(data, validations) {
   const errors = [];
-  
+
   Object.entries(validations).forEach(([field, validator]) => {
     if (data[field] !== undefined && !validator(data[field])) {
       errors.push(`Campo ${field} inválido`);
     }
   });
-  
+
   if (errors.length > 0) {
     throw new Error(`Errores de validación: ${errors.join(', ')}`);
   }
@@ -153,5 +157,5 @@ module.exports = {
   handleDynamoDBError,
   validateRequiredParams,
   validators,
-  validateData
-}; 
+  validateData,
+};

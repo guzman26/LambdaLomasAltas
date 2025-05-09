@@ -20,8 +20,14 @@ const createApiResponse = require('../utils/response');
 module.exports = async event => {
   try {
     const { queryStringParameters = {} } = event;
-    const { codigo, ubicacion, palletId, limit = 50, lastKey: lastKeyEncoded } = queryStringParameters;
-    
+    const {
+      codigo,
+      ubicacion,
+      palletId,
+      limit = 50,
+      lastKey: lastKeyEncoded,
+    } = queryStringParameters;
+
     // Decode lastKey if provided
     let lastKey;
     if (lastKeyEncoded) {
@@ -79,13 +85,13 @@ module.exports = async event => {
     }
 
     const { Items, LastEvaluatedKey } = await dynamoDB.query(params).promise();
-    
+
     // Preparar respuesta con paginación
     const response = {
       items: Items,
       count: Items.length,
     };
-    
+
     // Si hay más resultados, incluir un token de paginación
     if (LastEvaluatedKey) {
       response.lastKey = Buffer.from(JSON.stringify(LastEvaluatedKey)).toString('base64');

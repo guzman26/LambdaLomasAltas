@@ -67,11 +67,14 @@ module.exports = async event => {
     try {
       body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
     } catch (error) {
-      return createApiResponse(400, 'Error al procesar el cuerpo de la solicitud. El formato JSON es inválido.');
+      return createApiResponse(
+        400,
+        'Error al procesar el cuerpo de la solicitud. El formato JSON es inválido.'
+      );
     }
 
     const { codigo, destino, palletId } = body || {};
-    
+
     // Validate required parameters
     try {
       validateRequiredParams({ codigo, destino }, ['codigo', 'destino']);
@@ -115,7 +118,7 @@ module.exports = async event => {
         destino,
         usuario: event.requestContext?.authorizer?.claims?.email || 'sistema',
         timestamp: new Date().toISOString(),
-        metadata: { palletId }
+        metadata: { palletId },
       });
     } catch (historyError) {
       console.error(`❌ Error al registrar movimiento para caja ${codigo}:`, historyError);

@@ -7,4 +7,3 @@ async function getAllHistory(startDate, endDate) {
 }
 
 module.exports = getAllHistory;
-

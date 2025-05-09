@@ -8,11 +8,11 @@ const tableName = Tables.Pallets;
 function parsePalletCode(code) {
   try {
     validateRequiredParams({ code }, ['code']);
-    
+
     if (!/^\d{12}$/.test(code)) {
       throw new Error(`Código de pallet inválido: ${code}`);
     }
-    
+
     return {
       dayOfWeek: code.slice(0, 1),
       weekOfYear: code.slice(1, 3),
@@ -34,7 +34,7 @@ function parsePalletCode(code) {
 async function nextSuffix(baseCode) {
   try {
     validateRequiredParams({ baseCode }, ['baseCode']);
-    
+
     const res = await dynamoDB
       .query({
         TableName: tableName,
@@ -58,7 +58,7 @@ async function nextSuffix(baseCode) {
 async function createPallet(baseCode, ubicacion = 'PACKING') {
   try {
     validateRequiredParams({ baseCode }, ['baseCode']);
-    
+
     if (!/^\d{9}$/.test(baseCode)) {
       throw new Error('baseCode debe ser string de 9 dígitos');
     }
@@ -248,41 +248,41 @@ async function getOrCreatePallet(codigo, ubicacion = 'PACKING') {
 async function addBoxToPallet(palletId, boxCode) {
   try {
     validateRequiredParams({ palletId, boxCode }, ['palletId', 'boxCode']);
-    
+
     // 1. Verificar que el pallet existe
     const pallet = await getPalletByCode(palletId);
-    
+
     if (!pallet) {
       throw new Error(`Pallet ${palletId} no encontrado`);
     }
-    
+
     // 2. Comprobar que el pallet no está cerrado
     if (pallet.estado === 'closed') {
       throw new Error(`No se pueden añadir cajas al pallet ${palletId} porque está cerrado`);
     }
-    
+
     // 3. Verificar que la caja existe
     const { getBoxByCode } = require('./boxes');
     const box = await getBoxByCode(boxCode);
-    
+
     if (!box) {
       throw new Error(`Caja ${boxCode} no encontrada`);
     }
-    
+
     // 4. Validar que la caja no está ya en otro pallet
     if (box.palletId && box.palletId !== palletId) {
       throw new Error(
         `La caja ${boxCode} ya está asignada al pallet ${box.palletId}. Desasígnela primero.`
       );
     }
-    
+
     // 5. Validar que la caja está en PACKING (solo se pueden asignar desde PACKING)
     if (box.ubicacion !== 'PACKING') {
       throw new Error(
         `La caja ${boxCode} está en ${box.ubicacion}, no en PACKING. Solo se pueden asignar cajas desde PACKING.`
       );
     }
-    
+
     // 6. Actualizar la caja con el palletId
     await dynamoDB
       .update({
@@ -292,14 +292,14 @@ async function addBoxToPallet(palletId, boxCode) {
         ExpressionAttributeValues: { ':p': palletId },
       })
       .promise();
-    
+
     // 7. Actualizar el pallet - añadimos la caja a la lista y actualizamos conteo
     const cajas = [...(pallet.cajas || [])];
     // Solo añadimos si no está ya
     if (!cajas.includes(boxCode)) {
       cajas.push(boxCode);
     }
-    
+
     const palletUpdated = await dynamoDB
       .update({
         TableName: tableName,
@@ -312,16 +312,17 @@ async function addBoxToPallet(palletId, boxCode) {
         ReturnValues: 'ALL_NEW',
       })
       .promise();
-    
+
     return palletUpdated.Attributes;
   } catch (error) {
     // Si es un error ya formateado, lo pasamos directamente
-    if (error.message && (
-      error.message.includes('no encontrado') || 
-      error.message.includes('cerrado') || 
-      error.message.includes('ya está asignada') || 
-      error.message.includes('Solo se pueden asignar')
-    )) {
+    if (
+      error.message &&
+      (error.message.includes('no encontrado') ||
+        error.message.includes('cerrado') ||
+        error.message.includes('ya está asignada') ||
+        error.message.includes('Solo se pueden asignar'))
+    ) {
       throw error;
     }
     throw handleDynamoDBError(error, 'asignar', 'caja a pallet', `${boxCode} a ${palletId}`);

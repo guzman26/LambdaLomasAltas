@@ -6,7 +6,7 @@ const tableName = Tables.MovementHistory;
 
 /**
  * Record a movement event for a box or pallet
- * @param {string} itemCode - Box or pallet code 
+ * @param {string} itemCode - Box or pallet code
  * @param {string} itemType - BOX or PALLET
  * @param {string} fromLocation - Previous location
  * @param {string} toLocation - New location
@@ -15,18 +15,20 @@ const tableName = Tables.MovementHistory;
  */
 async function recordMovement(codigo, itemType, fromLocation, toLocation, userId = 'system') {
   try {
-    validateRequiredParams(
-      { codigo, itemType, fromLocation, toLocation },
-      ['codigo', 'itemType', 'fromLocation', 'toLocation']
-    );
-    
+    validateRequiredParams({ codigo, itemType, fromLocation, toLocation }, [
+      'codigo',
+      'itemType',
+      'fromLocation',
+      'toLocation',
+    ]);
+
     if (!['BOX', 'PALLET'].includes(itemType)) {
       throw new Error('itemType must be BOX or PALLET');
     }
-    
+
     const timestamp = new Date().toISOString();
     const id = require('uuid').v4();
-    
+
     const movementRecord = {
       id,
       codigo,
@@ -34,18 +36,22 @@ async function recordMovement(codigo, itemType, fromLocation, toLocation, userId
       fromLocation,
       toLocation,
       timestamp,
-      userId
+      userId,
     };
-    
-    await dynamoDB.put({
-      TableName: tableName,
-      Item: movementRecord
-    }).promise();
-    
+
+    await dynamoDB
+      .put({
+        TableName: tableName,
+        Item: movementRecord,
+      })
+      .promise();
+
     return movementRecord;
   } catch (error) {
-    if (error.message.includes('Parámetros requeridos') || 
-        error.message.includes('itemType must be')) {
+    if (
+      error.message.includes('Parámetros requeridos') ||
+      error.message.includes('itemType must be')
+    ) {
       throw error;
     }
     throw handleDynamoDBError(error, 'registrar', 'movimiento', codigo);
@@ -67,14 +73,14 @@ async function recordMovement(codigo, itemType, fromLocation, toLocation, userId
 async function registerMovement(moveData) {
   try {
     validateRequiredParams(moveData, ['codigo', 'itemType', 'destino']);
-    
+
     if (!['BOX', 'PALLET'].includes(moveData.itemType)) {
       throw new Error('itemType debe ser BOX o PALLET');
     }
-    
+
     const timestamp = moveData.timestamp || new Date().toISOString();
     const id = require('uuid').v4();
-    
+
     const movementRecord = {
       id,
       codigo: moveData.codigo,
@@ -83,18 +89,22 @@ async function registerMovement(moveData) {
       toLocation: moveData.destino,
       timestamp,
       userId: moveData.usuario || 'system',
-      metadata: moveData.metadata || {}
+      metadata: moveData.metadata || {},
     };
-    
-    await dynamoDB.put({
-      TableName: tableName,
-      Item: movementRecord
-    }).promise();
-    
+
+    await dynamoDB
+      .put({
+        TableName: tableName,
+        Item: movementRecord,
+      })
+      .promise();
+
     return movementRecord;
   } catch (error) {
-    if (error.message.includes('Parámetros requeridos') || 
-        error.message.includes('itemType debe ser')) {
+    if (
+      error.message.includes('Parámetros requeridos') ||
+      error.message.includes('itemType debe ser')
+    ) {
       throw error;
     }
     throw handleDynamoDBError(error, 'registrar', 'movimiento', moveData?.codigo);
@@ -109,17 +119,17 @@ async function registerMovement(moveData) {
 async function getMovementsByItemCode(itemCode) {
   try {
     validateRequiredParams({ itemCode }, ['itemCode']);
-    
+
     const params = {
       TableName: tableName,
       IndexName: 'codigo-timestamp-index',
       KeyConditionExpression: 'codigo = :code',
       ExpressionAttributeValues: {
-        ':code': itemCode
+        ':code': itemCode,
       },
-      ScanIndexForward: false // Most recent first
+      ScanIndexForward: false, // Most recent first
     };
-    
+
     const result = await dynamoDB.query(params).promise();
     return result.Items || [];
   } catch (error) {
@@ -139,30 +149,37 @@ async function getMovementsByItemCode(itemCode) {
 async function getMovementsByDateRange(startDate, endDate) {
   try {
     validateRequiredParams({ startDate, endDate }, ['startDate', 'endDate']);
-    
+
     // Validate date format
     if (isNaN(new Date(startDate).getTime()) || isNaN(new Date(endDate).getTime())) {
       throw new Error('Las fechas deben estar en formato ISO (YYYY-MM-DDTHH:MM:SS.sssZ)');
     }
-    
+
     const params = {
       TableName: tableName,
       IndexName: 'timestamp-index',
       KeyConditionExpression: 'timestamp BETWEEN :start AND :end',
       ExpressionAttributeValues: {
         ':start': startDate,
-        ':end': endDate
-      }
+        ':end': endDate,
+      },
     };
-    
+
     const result = await dynamoDB.query(params).promise();
     return result.Items || [];
   } catch (error) {
-    if (error.message.includes('Parámetros requeridos') || 
-        error.message.includes('Las fechas deben estar')) {
+    if (
+      error.message.includes('Parámetros requeridos') ||
+      error.message.includes('Las fechas deben estar')
+    ) {
       throw error;
     }
-    throw handleDynamoDBError(error, 'consultar', 'movimientos por rango de fechas', `${startDate} a ${endDate}`);
+    throw handleDynamoDBError(
+      error,
+      'consultar',
+      'movimientos por rango de fechas',
+      `${startDate} a ${endDate}`
+    );
   }
 }
 
@@ -170,5 +187,5 @@ module.exports = {
   recordMovement,
   registerMovement,
   getMovementsByItemCode,
-  getMovementsByDateRange
-}; 
+  getMovementsByDateRange,
+};

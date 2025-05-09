@@ -44,7 +44,7 @@ async function createBox(boxData) {
 async function getBoxByCode(codigo) {
   try {
     validateRequiredParams({ codigo }, ['codigo']);
-    
+
     const params = {
       TableName: tableName,
       Key: { codigo },
@@ -66,7 +66,7 @@ async function getBoxByCode(codigo) {
 async function updateBox(codigo, updates) {
   try {
     validateRequiredParams({ codigo, updates }, ['codigo', 'updates']);
-    
+
     // Comprobar que el box existe primero
     const existingBox = await getBoxByCode(codigo);
     if (!existingBox) {

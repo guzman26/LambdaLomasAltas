@@ -30,11 +30,7 @@ const getAllHistory = require('./handlers/getMovementHistory');
 const AWS = require('aws-sdk');
 const codepipeline = new AWS.CodePipeline();
 
-const {
-  auditAndFixData,
-  backupData,
-  deleteIssue,
-} = require('./handlers/admin');
+const { auditAndFixData, backupData, deleteIssue } = require('./handlers/admin');
 const { getSystemDashboard } = require('./handlers/admin/getSystemDashboard');
 const { getIssues } = require('./handlers/admin/getIssues');
 const { updateIssueStatus } = require('./handlers/admin/updateIssueStatus');

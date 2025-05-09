@@ -15,10 +15,6 @@ module.exports = async () => {
     return response(200, eggs);
   } catch (error) {
     console.error('Error en getPacking+Transito:', error);
-    return response(
-      500,
-      'Error al obtener huevos en PACKING/TRANSITO',
-      { error: error.message },
-    );
+    return response(500, 'Error al obtener huevos en PACKING/TRANSITO', { error: error.message });
   }
 };
