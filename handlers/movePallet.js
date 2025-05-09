@@ -21,9 +21,9 @@ async function movePallet(codigo, destino) {
       return createApiResponse(400, `El pallet ${codigo} ya se encuentra en ${destino}.`);
 
     const fromLocation = pallet.ubicacion;
-    
+
     const { boxesUpdated } = await movePalletWithBoxes(codigo, destino);
-    
+
     // Record pallet movement in history
     await recordMovement(codigo, 'PALLET', fromLocation, destino);
 

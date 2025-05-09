@@ -11,42 +11,42 @@ async function getItemHistory(codigo, itemType) {
   if (!codigo) {
     throw new Error('Code is required');
   }
-  
+
   if (!['BOX', 'PALLET'].includes(itemType)) {
     throw new Error('Item type must be BOX or PALLET');
   }
 
   const tableName = itemType === 'BOX' ? Tables.Boxes : Tables.Pallets;
-  
+
   try {
     // Get the current item data
     const params = {
       TableName: tableName,
-      Key: { codigo }
+      Key: { codigo },
     };
-    
+
     const result = await dynamoDB.get(params).promise();
-    
+
     if (!result.Item) {
       throw new Error(`${itemType} with code ${codigo} not found`);
     }
-    
+
     // Get movement logs from the history table
     const historyParams = {
       TableName: Tables.MovementHistory,
       IndexName: 'codigo-timestamp-index',
       KeyConditionExpression: 'codigo = :code',
       ExpressionAttributeValues: {
-        ':code': codigo
+        ':code': codigo,
       },
-      ScanIndexForward: false // Most recent first
+      ScanIndexForward: false, // Most recent first
     };
-    
+
     const historyResult = await dynamoDB.query(historyParams).promise();
-    
+
     return {
       item: result.Item,
-      movements: historyResult.Items || []
+      movements: historyResult.Items || [],
     };
   } catch (error) {
     console.error(`Error getting history for ${itemType} ${codigo}:`, error);
@@ -57,11 +57,11 @@ async function getItemHistory(codigo, itemType) {
 async function getItemHistoryHandler(event) {
   try {
     const { codigo, itemType } = event.queryStringParameters || {};
-    
+
     if (!codigo || !itemType) {
       return createApiResponse(400, 'Missing required parameters: codigo and itemType', null);
     }
-    
+
     const result = await getItemHistory(codigo, itemType);
     return createApiResponse(200, `${itemType} history fetched successfully`, result);
   } catch (error) {
@@ -70,4 +70,4 @@ async function getItemHistoryHandler(event) {
   }
 }
 
-module.exports = getItemHistoryHandler; 
+module.exports = getItemHistoryHandler;

@@ -15,4 +15,4 @@ const unsubscribeBoxFromPalletHandler = async (palletId, boxCode) => {
   }
 };
 
-module.exports = unsubscribeBoxFromPalletHandler; 
+module.exports = unsubscribeBoxFromPalletHandler;
