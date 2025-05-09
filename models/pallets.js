@@ -1,69 +1,92 @@
 // models/pallets.js
 const { dynamoDB, Tables } = require('./index');
+const { handleDynamoDBError, validateRequiredParams } = require('../utils/dynamoErrors');
 
 const tableName = Tables.Pallets;
 
 /** Parsea un código de pallet de 9 + 3 dígitos */
 function parsePalletCode(code) {
-  if (!/^\d{12}$/.test(code)) {
-    throw new Error(`Código de pallet inválido: ${code}`);
+  try {
+    validateRequiredParams({ code }, ['code']);
+    
+    if (!/^\d{12}$/.test(code)) {
+      throw new Error(`Código de pallet inválido: ${code}`);
+    }
+    
+    return {
+      dayOfWeek: code.slice(0, 1),
+      weekOfYear: code.slice(1, 3),
+      year: code.slice(3, 5),
+      shift: code.slice(5, 6),
+      caliber: code.slice(6, 8),
+      format: code.slice(8, 9),
+      suffix: code.slice(9), // ### incremental
+    };
+  } catch (error) {
+    if (error.message.includes('Parámetros requeridos')) {
+      throw error;
+    }
+    throw new Error(`Error al parsear código de pallet: ${error.message}`);
   }
-  return {
-    dayOfWeek: code.slice(0, 1),
-    weekOfYear: code.slice(1, 3),
-    year: code.slice(3, 5),
-    shift: code.slice(5, 6),
-    caliber: code.slice(6, 8),
-    format: code.slice(8, 9),
-    suffix: code.slice(9), // ### incremental
-  };
 }
 
 /** Devuelve el siguiente sufijo ### libre para un baseCode dado */
 async function nextSuffix(baseCode) {
-  const res = await dynamoDB
-    .query({
-      TableName: tableName,
-      IndexName: 'baseCode-suffix-GSI',
-      KeyConditionExpression: 'baseCode = :b',
-      ExpressionAttributeValues: { ':b': baseCode },
-      ProjectionExpression: 'suffix',
-      ScanIndexForward: false, // orden DESC
-      Limit: 1,
-    })
-    .promise();
+  try {
+    validateRequiredParams({ baseCode }, ['baseCode']);
+    
+    const res = await dynamoDB
+      .query({
+        TableName: tableName,
+        IndexName: 'baseCode-suffix-GSI',
+        KeyConditionExpression: 'baseCode = :b',
+        ExpressionAttributeValues: { ':b': baseCode },
+        ProjectionExpression: 'suffix',
+        ScanIndexForward: false, // orden DESC
+        Limit: 1,
+      })
+      .promise();
 
-  const max = res.Count === 0 ? 0 : Number(res.Items[0].suffix);
-  return String(max + 1).padStart(3, '0');
+    const max = res.Count === 0 ? 0 : Number(res.Items[0].suffix);
+    return String(max + 1).padStart(3, '0');
+  } catch (error) {
+    throw handleDynamoDBError(error, 'calcular', 'siguiente sufijo', baseCode);
+  }
 }
 
 /** Crea un pallet y lo devuelve  */
 async function createPallet(baseCode, ubicacion = 'PACKING') {
-  if (!/^\d{9}$/.test(baseCode)) {
-    throw new Error('baseCode debe ser string de 9 dígitos');
+  try {
+    validateRequiredParams({ baseCode }, ['baseCode']);
+    
+    if (!/^\d{9}$/.test(baseCode)) {
+      throw new Error('baseCode debe ser string de 9 dígitos');
+    }
+
+    const suffix = await nextSuffix(baseCode);
+    const codigo = `${baseCode}${suffix}`;
+    const parts = parsePalletCode(codigo);
+
+    const pallet = {
+      codigo,
+      baseCode,
+      suffix,
+      pkFecha: 'FECHA',
+      fechaCalibreFormato: `${parts.dayOfWeek}${parts.weekOfYear}${parts.year}${parts.shift}${parts.caliber}${parts.format}`,
+      estado: 'open',
+      cajas: [],
+      cantidadCajas: 0,
+      fechaCreacion: new Date().toISOString(),
+      ubicacion,
+    };
+
+    console.log('Pallet a crear:', tableName, pallet);
+
+    await dynamoDB.put({ TableName: tableName, Item: pallet }).promise();
+    return pallet;
+  } catch (error) {
+    throw handleDynamoDBError(error, 'crear', 'pallet', baseCode);
   }
-
-  const suffix = await nextSuffix(baseCode);
-  const codigo = `${baseCode}${suffix}`;
-  const parts = parsePalletCode(codigo);
-
-  const pallet = {
-    codigo,
-    baseCode,
-    suffix,
-    pkFecha: 'FECHA',
-    fechaCalibreFormato: `${parts.dayOfWeek}${parts.weekOfYear}${parts.year}${parts.shift}${parts.caliber}${parts.format}`,
-    estado: 'open',
-    cajas: [],
-    cantidadCajas: 0,
-    fechaCreacion: new Date().toISOString(),
-    ubicacion,
-  };
-
-  console.log('Pallet a crear:', tableName, pallet);
-
-  await dynamoDB.put({ TableName: tableName, Item: pallet }).promise();
-  return pallet;
 }
 
 const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
@@ -216,76 +239,93 @@ async function getOrCreatePallet(codigo, ubicacion = 'PACKING') {
   return pallet;
 }
 
+/**
+ * Añade una caja a un pallet
+ * @param {string} palletId - Código del pallet
+ * @param {string} boxCode - Código de la caja a añadir
+ * @returns {Promise<Object>} Pallet actualizado
+ */
 async function addBoxToPallet(palletId, boxCode) {
-  /* 1. Leer y validar pallet ------------------------------------------------*/
-  const pallet = await getPalletByCode(palletId);
-  if (!pallet) throw new Error(`Pallet "${palletId}" no encontrado`);
-  if (pallet.estado !== 'open') throw new Error(`Pallet "${palletId}" no está abierto`);
-  if ((pallet.cantidadCajas || 0) >= 60) throw new Error(`Pallet "${palletId}" está lleno`);
-
-  // 2) Obtener box (lectura directa, sin requerir boxes.js)
-  const { Item: box } = await dynamoDB
-    .get({ TableName: Tables.Boxes, Key: { codigo: boxCode } })
-    .promise();
-
-  if (!box) throw new Error(`Box "${boxCode}" no existe`);
-
-  // ── compatibilidad calibre / formato / fecha
-  const p = parsePalletCode(pallet.codigo);
-  const pDate = `20${p.year}-W${p.weekOfYear}-${p.dayOfWeek}`;
-  const bDate = new Date(box.fecha_registro);
-  const bWeek = getISOWeek(bDate);
-  const bIso = `${bDate.getUTCFullYear()}-W${String(bWeek).padStart(2, '0')}-${bDate.getUTCDay()}`;
-
-  if (p.caliber !== box.calibre) throw new Error('Calibre no coincide');
-  if (p.format !== box.formato_caja) throw new Error('Formato no coincide');
-  // if (pDate     !== bIso)             throw new Error('Fecha no coincide');
-
-  /* 3. Operación atómica -----------------------------------------------------*/
-  const tx = {
-    TransactItems: [
-      /* 3.1 – actualizar pallet */
-      {
-        Update: {
-          TableName: tableName,
-          Key: { codigo: palletId },
-          UpdateExpression: `
-              SET cajas        = list_append(if_not_exists(cajas, :empty), :nuevo),
-                  cantidadCajas = if_not_exists(cantidadCajas, :zero) + :inc`,
-          ConditionExpression: 'attribute_not_exists(cajas) OR NOT contains(cajas, :dup)',
-          ExpressionAttributeValues: {
-            ':nuevo': [String(boxCode)], // asegúrate de que es STRING
-            ':empty': [],
-            ':inc': 1,
-            ':zero': 0,
-            ':dup': String(boxCode),
-          },
+  try {
+    validateRequiredParams({ palletId, boxCode }, ['palletId', 'boxCode']);
+    
+    // 1. Verificar que el pallet existe
+    const pallet = await getPalletByCode(palletId);
+    
+    if (!pallet) {
+      throw new Error(`Pallet ${palletId} no encontrado`);
+    }
+    
+    // 2. Comprobar que el pallet no está cerrado
+    if (pallet.estado === 'closed') {
+      throw new Error(`No se pueden añadir cajas al pallet ${palletId} porque está cerrado`);
+    }
+    
+    // 3. Verificar que la caja existe
+    const { getBoxByCode } = require('./boxes');
+    const box = await getBoxByCode(boxCode);
+    
+    if (!box) {
+      throw new Error(`Caja ${boxCode} no encontrada`);
+    }
+    
+    // 4. Validar que la caja no está ya en otro pallet
+    if (box.palletId && box.palletId !== palletId) {
+      throw new Error(
+        `La caja ${boxCode} ya está asignada al pallet ${box.palletId}. Desasígnela primero.`
+      );
+    }
+    
+    // 5. Validar que la caja está en PACKING (solo se pueden asignar desde PACKING)
+    if (box.ubicacion !== 'PACKING') {
+      throw new Error(
+        `La caja ${boxCode} está en ${box.ubicacion}, no en PACKING. Solo se pueden asignar cajas desde PACKING.`
+      );
+    }
+    
+    // 6. Actualizar la caja con el palletId
+    await dynamoDB
+      .update({
+        TableName: Tables.Boxes,
+        Key: { codigo: boxCode },
+        UpdateExpression: 'SET palletId = :p',
+        ExpressionAttributeValues: { ':p': palletId },
+      })
+      .promise();
+    
+    // 7. Actualizar el pallet - añadimos la caja a la lista y actualizamos conteo
+    const cajas = [...(pallet.cajas || [])];
+    // Solo añadimos si no está ya
+    if (!cajas.includes(boxCode)) {
+      cajas.push(boxCode);
+    }
+    
+    const palletUpdated = await dynamoDB
+      .update({
+        TableName: tableName,
+        Key: { codigo: palletId },
+        UpdateExpression: 'SET cajas = :c, cantidadCajas = :n',
+        ExpressionAttributeValues: {
+          ':c': cajas,
+          ':n': cajas.length,
         },
-      },
-      /* 3.2 – actualizar box */
-      {
-        Update: {
-          TableName: Tables.Boxes,
-          Key: { codigo: boxCode },
-          UpdateExpression: 'SET palletId = :pid',
-          ExpressionAttributeValues: { ':pid': palletId },
-        },
-      },
-    ],
-  };
-
-  await dynamoDB.transactWrite(tx).promise();
-
-  /* 4. Devolver pallet fresco con lectura fuerte ----------------------------*/
-  const { Item: updated } = await dynamoDB
-    .get({
-      TableName: tableName,
-      Key: { codigo: palletId },
-      ConsistentRead: true,
-    })
-    .promise();
-
-  return updated;
+        ReturnValues: 'ALL_NEW',
+      })
+      .promise();
+    
+    return palletUpdated.Attributes;
+  } catch (error) {
+    // Si es un error ya formateado, lo pasamos directamente
+    if (error.message && (
+      error.message.includes('no encontrado') || 
+      error.message.includes('cerrado') || 
+      error.message.includes('ya está asignada') || 
+      error.message.includes('Solo se pueden asignar')
+    )) {
+      throw error;
+    }
+    throw handleDynamoDBError(error, 'asignar', 'caja a pallet', `${boxCode} a ${palletId}`);
+  }
 }
 
 /** Devuelve semana ISO */
@@ -376,7 +416,7 @@ async function movePalletWithBoxes(codigoPallet, destino) {
   cajas.forEach(codigoBox => {
     const UpdateExpression =
       destino === 'TRANSITO'
-        ? 'SET ubicacion = :u REMOVE palletId' // se “desengancha”
+        ? 'SET ubicacion = :u REMOVE palletId' // se "desengancha"
         : 'SET ubicacion = :u';
 
     txItems.push({
